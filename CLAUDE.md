@@ -15,6 +15,18 @@ npm run lint     # ESLint
 npm start        # Start production server
 ```
 
+### SpaceTimeDB
+
+```bash
+spacetime build --module-path server/spacetimedb           # Build module
+spacetime publish whimsy --module-path spacetimedb         # Publish (run from server/)
+spacetime sql whimsy "SELECT * FROM npc_object"            # Query
+spacetime logs whimsy                                      # View logs
+spacetime generate --lang typescript \
+  --out-dir src/lib/spacetimedb \
+  --module-path server/spacetimedb                         # Regenerate TS bindings
+```
+
 ## Architecture
 
 **Next.js 15 App Router** with React 19, Tailwind CSS 3, TypeScript 5.
@@ -23,26 +35,32 @@ npm start        # Start production server
 - **Google Gemini 2.0 Flash** — object identification from camera images (`src/lib/gemini.ts`)
 - **Nano Banana 2 (Gemini 3.1 Flash Image)** — image-to-image generation for googly eyes (`src/lib/nanobanana.ts`)
 - **ElevenLabs** — conversational AI with dynamic voices (`src/components/conversation.tsx`)
+- **SpaceTimeDB** — database on maincloud (`src/lib/db.ts` via HTTP API, module at `server/spacetimedb/`)
 - **Cloudflare R2** — S3-compatible image storage (`src/lib/r2.ts`)
 
 ### Data Flow: Object Creation
 1. User captures image via camera or file upload (`CameraCapture` component)
 2. `POST /api/identify` — Gemini analyzes image, returns name/personality/backstory/voice
-3. `POST /api/generate-image` — fal.ai generates googly-eyed version
+3. `POST /api/generate-image` — Nano Banana 2 generates googly-eyed version, uploads to R2
 4. `POST /api/upload` — original image uploaded to R2
-5. `POST /api/objects` — NPCObject saved to JSON DB
+5. `POST /api/objects` — NPCObject saved to SpaceTimeDB via reducer
 6. Redirect to `/object/{id}` for voice interaction
 
 ### Database
-JSON file-based storage in `.data/objects.json` via `src/lib/db.ts`. Planned migration to SpaceTimeDB. The core data model is `NPCObject` defined in `src/types/index.ts`.
+SpaceTimeDB (maincloud) with `npc_object` table. `src/lib/db.ts` wraps the HTTP API (SQL queries + reducer calls). The Rust module is at `server/spacetimedb/src/lib.rs`. Core data model is `NPCObject` in `src/types/index.ts`.
+
+### R2 Bucket Structure
+- `originals/{uuid}.{ext}` — Original captured images
+- `googly/{uuid}.jpg` — Images with googly eyes
+- `cutouts/{uuid}.png` — Cutout/segmented images (future)
 
 ### Path Alias
 `@/*` maps to `./src/*`
 
 ## Design System
 
-Dark theme (`#1a1a1a` bg) with golden accent (`#e8c872`). Custom colors defined in `tailwind.config.ts` under `bg`, `surface`, `border`, `muted`, `accent` keys. Fonts: Geist Sans + Geist Mono via CSS variables.
+Dark background (`#0a0a0a`) with white card surfaces and golden accent (`#e8c872`). Clean rounded corners (2xl/3xl). Colors defined via CSS variables in `globals.css` and referenced in `tailwind.config.ts`. Fonts: Geist Sans + Geist Mono.
 
 ## Environment Variables
 
-See `.env.example` for the full list. Required: `GEMINI_API_KEY`, `ELEVENLABS_API_KEY`, R2 credentials (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`), `R2_PUBLIC_URL`, `NEXT_PUBLIC_ELEVENLABS_AGENT_ID`.
+See `.env.example` for the full list. Required: `GEMINI_API_KEY`, `ELEVENLABS_API_KEY`, `SPACETIMEDB_TOKEN`, R2 credentials (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`), `R2_PUBLIC_URL`, `NEXT_PUBLIC_ELEVENLABS_AGENT_ID`.
