@@ -19,6 +19,7 @@ export const NpcObject = __t.object("NpcObject", {
   imageUrl: __t.string(),
   originalImageUrl: __t.string(),
   voiceId: __t.string(),
+  voiceName: __t.string(),
   timesTalkedTo: __t.u32(),
   createdAt: __t.timestamp(),
 });

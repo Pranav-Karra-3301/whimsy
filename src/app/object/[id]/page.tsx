@@ -56,10 +56,18 @@ export default async function ObjectPage({
           <p className="text-sm text-[var(--muted-on-light)] mt-1">
             {object.backstory}
           </p>
-          <p className="text-xs text-[var(--muted-on-light)] mt-3 font-mono">
-            Talked to {object.times_talked_to} time
-            {object.times_talked_to !== 1 ? "s" : ""}
-          </p>
+          <div className="flex items-center gap-3 mt-3 text-xs text-[var(--muted-on-light)] font-mono">
+            <span>
+              Talked {object.times_talked_to} time
+              {object.times_talked_to !== 1 ? "s" : ""}
+            </span>
+            {object.voice_name && (
+              <>
+                <span className="opacity-30">|</span>
+                <span>Voice: {object.voice_name}</span>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

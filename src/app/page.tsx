@@ -20,7 +20,13 @@ export default function Home() {
   const [identity, setIdentity] = useState<IdentifyResponse | null>(null);
   const [voices, setVoices] = useState<Voice[]>([]);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
+  const [selectedVoiceName, setSelectedVoiceName] = useState<string | null>(null);
   const [talking, setTalking] = useState(false);
+
+  const handleVoiceSelect = useCallback((voiceId: string, voiceName: string) => {
+    setSelectedVoiceId(voiceId);
+    setSelectedVoiceName(voiceName);
+  }, []);
 
   const handleCapture = useCallback(async (base64: string) => {
     setError("");
@@ -80,6 +86,7 @@ export default function Home() {
           image_url: googlyImageUrl,
           original_image_url,
           voice_id: selectedVoiceId || "",
+          voice_name: selectedVoiceName || "",
         }),
       });
       if (!saveRes.ok) throw new Error("Failed to save");
@@ -90,7 +97,7 @@ export default function Home() {
       setError(err instanceof Error ? err.message : "Failed to save");
       setStep("result");
     }
-  }, [capturedImage, googlyImageUrl, identity, selectedVoiceId, router]);
+  }, [capturedImage, googlyImageUrl, identity, selectedVoiceId, selectedVoiceName, router]);
 
   const handleRetake = useCallback(() => {
     setStep("capture");
@@ -98,6 +105,7 @@ export default function Home() {
     setGooglyImageUrl(null);
     setIdentity(null);
     setSelectedVoiceId(null);
+    setSelectedVoiceName(null);
     setTalking(false);
     setError("");
   }, []);
@@ -159,7 +167,7 @@ export default function Home() {
             <VoicePicker
               voices={voices}
               selectedVoiceId={selectedVoiceId}
-              onSelect={setSelectedVoiceId}
+              onSelect={handleVoiceSelect}
             />
           )}
 

@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, personality, backstory, voice_description, image_url, original_image_url, voice_id } = body;
+    const { name, personality, backstory, voice_description, image_url, original_image_url, voice_id, voice_name } = body;
 
     if (!name || !personality || !image_url) {
       return NextResponse.json(
@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
       voice_description: voice_description || "",
       image_url,
       original_image_url: original_image_url || "",
-      voice_id,
+      voice_id: voice_id || "",
+      voice_name: voice_name || "",
     });
 
     return NextResponse.json(object, { status: 201 });

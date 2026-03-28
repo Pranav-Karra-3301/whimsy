@@ -11,6 +11,7 @@ pub struct NpcObject {
     pub image_url: String,
     pub original_image_url: String,
     pub voice_id: String,
+    pub voice_name: String,
     pub times_talked_to: u32,
     pub created_at: Timestamp,
 }
@@ -35,6 +36,7 @@ pub fn create_object(
     image_url: String,
     original_image_url: String,
     voice_id: String,
+    voice_name: String,
 ) -> Result<(), String> {
     if name.is_empty() || personality.is_empty() || image_url.is_empty() {
         return Err("name, personality, and image_url are required".to_string());
@@ -49,6 +51,7 @@ pub fn create_object(
         image_url,
         original_image_url,
         voice_id,
+        voice_name,
         times_talked_to: 0,
         created_at: ctx.timestamp,
     });
@@ -67,6 +70,7 @@ pub fn update_object(
     image_url: String,
     original_image_url: String,
     voice_id: String,
+    voice_name: String,
 ) -> Result<(), String> {
     let existing = ctx.db.npc_object().id().find(&id)
         .ok_or("Object not found")?;
@@ -79,6 +83,7 @@ pub fn update_object(
         image_url,
         original_image_url,
         voice_id,
+        voice_name,
         ..existing
     });
 
