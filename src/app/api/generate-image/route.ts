@@ -16,15 +16,15 @@ export async function POST(req: NextRequest) {
   try {
     const { objectName, image } = await req.json();
 
-    if (!objectName || !image) {
+    if (!image) {
       return NextResponse.json(
-        { error: "objectName and image are required" },
+        { error: "image is required" },
         { status: 400 }
       );
     }
 
     // Generate googly-eyed image
-    const imageBuffer = await generateGooglyImage(objectName, image);
+    const imageBuffer = await generateGooglyImage(image, objectName);
 
     // Upload to R2
     const key = `googly/${uuidv4()}.jpg`;
