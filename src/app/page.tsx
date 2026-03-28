@@ -19,7 +19,6 @@ export default function Home() {
   const [identity, setIdentity] = useState<IdentifyResponse | null>(null);
   const [voiceId, setVoiceId] = useState("");
   const [voiceName, setVoiceName] = useState("");
-  const [talking, setTalking] = useState(false);
 
   const handleCapture = useCallback(
     async (base64: string, preview: string) => {
@@ -116,7 +115,6 @@ export default function Home() {
     setIdentity(null);
     setVoiceId("");
     setVoiceName("");
-    setTalking(false);
     setError("");
   }, [previewUrl]);
 
@@ -177,23 +175,13 @@ export default function Home() {
             </div>
 
             {/* Talk */}
-            {!talking && voiceId && (
-              <button
-                onClick={() => setTalking(true)}
-                className="w-full py-3.5 rounded-2xl bg-accent text-bg font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-all"
-              >
-                Talk to {identity.name}
-              </button>
-            )}
-
-            {talking && voiceId && (
-              <Conversation
-                objectId=""
-                objectName={identity.name}
-                personality={identity.personality}
-                voiceId={voiceId}
-              />
-            )}
+            <Conversation
+              objectId=""
+              objectName={identity.name}
+              personality={identity.personality}
+              voiceId={voiceId}
+              imageUrl={googlyImageUrl}
+            />
 
             {/* Actions */}
             <div className="flex gap-3">

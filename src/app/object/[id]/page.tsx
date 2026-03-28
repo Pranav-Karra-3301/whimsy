@@ -76,6 +76,7 @@ export default async function ObjectPage({
         objectName={object.name}
         personality={object.personality}
         voiceId={object.voice_id || ""}
+        imageUrl={object.image_url}
       />
     </div>
   );
