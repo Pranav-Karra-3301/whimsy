@@ -3,36 +3,45 @@
 @tailwind utilities;
 
 :root {
-  --bg: #1a1a1a;
-  --surface: #2a2a2a;
-  --border: #3a3a3a;
-  --muted: #8a8a8a;
+  --bg: #0a0a0a;
+  --surface: #ffffff;
+  --surface-dark: #141414;
+  --border-subtle: #1f1f1f;
+  --muted: #737373;
+  --muted-on-light: #6b7280;
   --accent: #e8c872;
+  --text: #fafafa;
+  --text-on-light: #0a0a0a;
 }
 
 body {
   background: var(--bg);
-  color: #e5e5e5;
+  color: var(--text);
 }
 
-/* Wobbling googly eyes animation */
 @keyframes wobble {
-  0%, 100% { transform: rotate(-3deg); }
-  25% { transform: rotate(2deg); }
-  50% { transform: rotate(-1deg); }
-  75% { transform: rotate(3deg); }
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
 }
 
 .wobble-eyes {
-  animation: wobble 2s ease-in-out infinite;
+  animation: wobble 3s ease-in-out infinite;
 }
 
-/* Pulse for recording indicator */
 @keyframes pulse-ring {
-  0% { transform: scale(0.9); opacity: 1; }
-  100% { transform: scale(1.5); opacity: 0; }
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
 }
 
 .pulse-ring {
-  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fade-in 0.3s ease-out;
 }

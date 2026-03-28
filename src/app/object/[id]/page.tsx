@@ -18,30 +18,49 @@ export default async function ObjectPage({
   }
 
   return (
-    <div className="space-y-6 pt-4">
+    <div className="pt-6 space-y-5 fade-in">
       <Link
         href="/gallery"
-        className="text-sm text-muted font-mono hover:text-neutral-200 transition-colors"
+        className="inline-flex items-center gap-1 text-sm text-muted hover:text-white transition-colors"
       >
-        ← gallery
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          className="opacity-60"
+        >
+          <path
+            d="M10 12L6 8L10 4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        Gallery
       </Link>
 
-      <div className="rounded-lg border border-border overflow-hidden bg-surface">
-        <div className="aspect-square relative overflow-hidden bg-neutral-800">
+      <div className="rounded-3xl overflow-hidden bg-white">
+        <div className="aspect-square overflow-hidden">
           <img
             src={object.image_url}
             alt={object.name}
             className="w-full h-full object-cover wobble-eyes"
           />
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <h1 className="font-mono text-2xl font-bold">{object.name}</h1>
-        <p className="text-sm text-muted">{object.backstory}</p>
-        <p className="text-xs text-muted font-mono">
-          talked {object.times_talked_to} time{object.times_talked_to !== 1 ? "s" : ""}
-        </p>
+        <div className="px-5 py-4">
+          <h1 className="text-xl font-bold text-text-on-light">
+            {object.name}
+          </h1>
+          <p className="text-sm text-[var(--muted-on-light)] mt-1">
+            {object.backstory}
+          </p>
+          <p className="text-xs text-[var(--muted-on-light)] mt-3 font-mono">
+            Talked to {object.times_talked_to} time
+            {object.times_talked_to !== 1 ? "s" : ""}
+          </p>
+        </div>
       </div>
 
       <Conversation
