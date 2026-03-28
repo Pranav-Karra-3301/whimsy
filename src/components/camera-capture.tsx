@@ -3,7 +3,7 @@
 import { useRef, useState, useCallback } from "react";
 
 interface CameraCaptureProps {
-  onCapture: (base64: string) => void;
+  onCapture: (base64: string, previewUrl: string) => void;
   disabled?: boolean;
 }
 
@@ -13,6 +13,7 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
   const streamRef = useRef<MediaStream | null>(null);
   const [streaming, setStreaming] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState("");
 
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -20,6 +21,7 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
   }, []);
 
   const startCamera = useCallback(async () => {
+    setCameraError("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -31,12 +33,11 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
       }
       setStreaming(true);
       setPreview(null);
     } catch {
-      // Camera denied or unavailable
+      setCameraError("Camera access denied. Try uploading a photo instead.");
     }
   }, []);
 
@@ -45,15 +46,36 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // Wait for video to have actual dimensions
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if (w === 0 || h === 0) return;
+
+    canvas.width = w;
+    canvas.height = h;
     canvas.getContext("2d")?.drawImage(video, 0, 0);
 
     const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-    stopStream();
-    setStreaming(false);
-    setPreview(dataUrl);
-    onCapture(dataUrl.split(",")[1]);
+    const base64 = dataUrl.split(",")[1];
+
+    // Create a blob URL for preview (more reliable than large data URLs on mobile)
+    canvas.toBlob(
+      (blob) => {
+        stopStream();
+        setStreaming(false);
+        if (blob) {
+          const blobUrl = URL.createObjectURL(blob);
+          setPreview(blobUrl);
+          onCapture(base64, blobUrl);
+        } else {
+          // Fallback to data URL
+          setPreview(dataUrl);
+          onCapture(base64, dataUrl);
+        }
+      },
+      "image/jpeg",
+      0.85
+    );
   }, [onCapture, stopStream]);
 
   const handleFile = useCallback(
@@ -63,8 +85,11 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = reader.result as string;
-        setPreview(dataUrl);
-        onCapture(dataUrl.split(",")[1]);
+        const base64 = dataUrl.split(",")[1];
+        // Create blob URL for preview
+        const blobUrl = URL.createObjectURL(file);
+        setPreview(blobUrl);
+        onCapture(base64, blobUrl);
       };
       reader.readAsDataURL(file);
     },
@@ -72,17 +97,19 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
   );
 
   const reset = useCallback(() => {
+    if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
     stopStream();
     setPreview(null);
     setStreaming(false);
-  }, [stopStream]);
+    setCameraError("");
+  }, [stopStream, preview]);
 
   if (preview) {
     return (
       <div className="relative fade-in">
         <img
           src={preview}
-          alt="Captured"
+          alt="Captured photo"
           className="w-full aspect-[4/3] object-cover rounded-2xl"
         />
         {!disabled && (
@@ -105,7 +132,7 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
           autoPlay
           playsInline
           muted
-          className="w-full aspect-[4/3] object-cover rounded-2xl bg-black"
+          className="w-full aspect-[4/3] object-cover rounded-2xl bg-neutral-900"
         />
         <canvas ref={canvasRef} className="hidden" />
         <button
@@ -135,11 +162,15 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
         <input
           type="file"
           accept="image/*"
+          capture="environment"
           onChange={handleFile}
           className="hidden"
           disabled={disabled}
         />
       </label>
+      {cameraError && (
+        <p className="text-sm text-red-400 text-center">{cameraError}</p>
+      )}
     </div>
   );
 }
