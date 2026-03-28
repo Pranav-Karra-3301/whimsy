@@ -3,7 +3,7 @@ import type { IdentifyResponse } from "@/types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
-const IDENTIFY_PROMPT = [
+const CHARACTER_PROMPT = [
   "You are looking at a photo of an object. Identify it and give it a fun, quirky personality as if it were an NPC in a video game.",
   "",
   "Return ONLY valid JSON with these fields:",
@@ -15,10 +15,32 @@ const IDENTIFY_PROMPT = [
   "}",
 ].join("\n");
 
+const PHOTO_PROMPT = [
+  "Study this image carefully. Identify everything — the subject, setting, mood, era, and any historical or cultural context.",
+  "",
+  "Create a conversational personality that EMBODIES the subject of this image:",
+  "- If it's a painting, you ARE the painting (e.g. 'I am the Mona Lisa, painted by Leonardo da Vinci...')",
+  "- If it's a personal photo, you ARE the moment captured (e.g. 'I'm that golden afternoon at the beach...')",
+  "- If it's a famous place or landmark, you ARE that place",
+  "- If it's a person, you represent that person's essence as captured in this moment",
+  "- If it's food, a scene, or anything else — embody it with warmth and personality",
+  "",
+  "Return ONLY valid JSON with these fields:",
+  "{",
+  '  "name": "A title for this image (e.g. The Starry Night, Sunday at the Park, Morning Coffee)",',
+  '  "personality": "Detailed personality and speaking style as system prompt instructions. Be warm, thoughtful, knowledgeable about the subject. Speak as if you ARE the subject.",',
+  '  "backstory": "2-3 sentences describing what this image shows and the story behind it",',
+  '  "voice_description": "What this subject\'s voice should sound like (e.g. warm and reflective, gentle and nostalgic, authoritative and wise)"',
+  "}",
+].join("\n");
+
 export async function identifyObject(
   imageBase64: string,
-  mimeType: string = "image/jpeg"
+  mimeType: string = "image/jpeg",
+  mode: "photo" | "character" = "character"
 ): Promise<IdentifyResponse> {
+  const prompt = mode === "photo" ? PHOTO_PROMPT : CHARACTER_PROMPT;
+
   const response = await ai.models.generateContent({
     model: "gemini-3.1-flash-image-preview",
     contents: [
@@ -31,7 +53,7 @@ export async function identifyObject(
               mimeType,
             },
           },
-          { text: IDENTIFY_PROMPT },
+          { text: prompt },
         ],
       },
     ],

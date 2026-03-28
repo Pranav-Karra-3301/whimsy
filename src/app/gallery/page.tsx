@@ -14,23 +14,23 @@ export default async function GalleryPage() {
           <h1 className="text-2xl font-bold tracking-tight">Gallery</h1>
           <p className="text-sm text-muted mt-1">
             {objects.length > 0
-              ? `${objects.length} object${objects.length !== 1 ? "s" : ""} npcified`
-              : "No objects yet"}
+              ? `${objects.length} conversation${objects.length !== 1 ? "s" : ""}`
+              : "No conversations yet"}
           </p>
         </div>
         <Link
           href="/"
-          className="px-4 py-2 rounded-xl bg-accent text-bg text-sm font-semibold hover:opacity-90 transition-opacity"
+          className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 transition-opacity"
         >
-          Scan
+          Upload
         </Link>
       </div>
 
       {objects.length === 0 ? (
         <div className="text-center py-20">
-          <div className="text-4xl mb-3">👀</div>
+          <div className="text-4xl mb-3">📷</div>
           <p className="text-muted text-sm">
-            Scan something to get started.
+            Upload a photo to start your first conversation.
           </p>
         </div>
       ) : (

@@ -20,4 +20,5 @@ export default {
   originalImageUrl: __t.string(),
   voiceId: __t.string(),
   voiceName: __t.string(),
+  mode: __t.string(),
 };

@@ -8,6 +8,7 @@ export interface NPCObject {
   original_image_url: string;
   voice_id: string;
   voice_name: string;
+  mode: "photo" | "character";
   times_talked_to: number;
   created_at: string;
 }

@@ -78,7 +78,6 @@ export function Conversation({
       recorder.stream.getTracks().forEach((t) => t.stop());
     });
 
-    // Convert to base64
     const buffer = await audioBlob.arrayBuffer();
     const base64 = btoa(
       new Uint8Array(buffer).reduce((s, b) => s + String.fromCharCode(b), "")
@@ -97,21 +96,16 @@ export function Conversation({
       });
 
       if (!res.ok) throw new Error("Chat failed");
-
       const data = await res.json();
 
-      // Add messages to transcript
       const newMessages: Message[] = [];
-      if (data.transcript) {
+      if (data.transcript)
         newMessages.push({ role: "user", text: data.transcript });
-      }
-      if (data.response) {
+      if (data.response)
         newMessages.push({ role: "assistant", text: data.response });
-      }
       setMessages((prev) => [...prev, ...newMessages]);
       scrollToBottom();
 
-      // Play TTS audio
       if (data.audio) {
         setStatus("playing");
         const audio = new Audio(`data:audio/mpeg;base64,${data.audio}`);
@@ -148,19 +142,17 @@ export function Conversation({
     setError("");
   }, []);
 
-  // Start button
   if (!open) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full py-3.5 rounded-2xl bg-accent text-bg font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-all"
+        className="w-full py-3.5 rounded-2xl bg-primary text-white font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-all shadow-sm"
       >
         Talk to {objectName}
       </button>
     );
   }
 
-  // Full-screen voice mode
   const statusText =
     status === "recording"
       ? "Listening..."
@@ -175,18 +167,18 @@ export function Conversation({
   return (
     <div className="fixed inset-0 z-50 bg-bg flex flex-col fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-safe-top py-3">
+      <div className="flex items-center justify-between px-4 py-3">
         {status === "ended" ? (
           <button
             onClick={close}
-            className="px-4 py-2 rounded-xl bg-accent text-bg text-sm font-semibold hover:opacity-90 transition-colors"
+            className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 transition-colors"
           >
             Done
           </button>
         ) : (
           <button
             onClick={endConversation}
-            className="px-4 py-2 rounded-xl bg-white/[0.06] border border-white/10 text-sm hover:bg-white/[0.1] transition-colors"
+            className="px-4 py-2 rounded-xl bg-surface border border-border text-sm hover:bg-surface-hover transition-colors shadow-sm"
           >
             End
           </button>
@@ -201,13 +193,13 @@ export function Conversation({
           <img
             src={imageUrl}
             alt={objectName}
-            className={`w-36 h-36 rounded-3xl object-cover bg-white ${
+            className={`w-44 h-44 rounded-3xl object-cover shadow-lg ${
               status === "playing" ? "wobble-eyes" : ""
             }`}
           />
         ) : (
-          <div className="w-36 h-36 rounded-3xl bg-white/10 flex items-center justify-center text-5xl">
-            👀
+          <div className="w-44 h-44 rounded-3xl bg-surface-hover border border-border flex items-center justify-center text-5xl">
+            📷
           </div>
         )}
       </div>
@@ -223,15 +215,15 @@ export function Conversation({
             key={i}
             className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
               msg.role === "assistant"
-                ? "bg-white/[0.06] mr-auto"
-                : "bg-accent/20 ml-auto text-right"
+                ? "bg-surface border border-border shadow-sm mr-auto"
+                : "bg-primary-light ml-auto text-right"
             }`}
           >
             {msg.text}
           </div>
         ))}
         {status === "processing" && (
-          <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/[0.06] mr-auto max-w-[85%]">
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-surface border border-border shadow-sm mr-auto max-w-[85%]">
             <div className="w-1.5 h-1.5 rounded-full bg-muted animate-pulse" />
             <div
               className="w-1.5 h-1.5 rounded-full bg-muted animate-pulse"
@@ -245,11 +237,11 @@ export function Conversation({
         )}
       </div>
 
-      {/* Push-to-talk button */}
+      {/* Push-to-talk */}
       {status !== "ended" && (
         <div className="flex-shrink-0 px-4 pb-8 pt-2 flex flex-col items-center gap-2">
           {error && (
-            <p className="text-sm text-red-400 text-center">{error}</p>
+            <p className="text-sm text-red-600 text-center">{error}</p>
           )}
           <button
             onTouchStart={startRecording}
@@ -257,10 +249,10 @@ export function Conversation({
             onMouseDown={startRecording}
             onMouseUp={stopRecording}
             disabled={status === "processing" || status === "playing"}
-            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all disabled:opacity-40 ${
+            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-lg disabled:opacity-40 ${
               status === "recording"
-                ? "bg-red-500 scale-110"
-                : "bg-white/10 hover:bg-white/15 active:scale-110 active:bg-red-500"
+                ? "bg-red-500 scale-110 text-white"
+                : "bg-primary text-white hover:opacity-90 active:scale-110 active:bg-red-500"
             }`}
           >
             <svg

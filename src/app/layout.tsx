@@ -5,9 +5,9 @@ import "./globals.css";
 import { Nav } from "@/components/nav";
 
 export const metadata: Metadata = {
-  title: "Whimsy — NPCify Everything",
+  title: "Whimsy — Talk to Any Picture",
   description:
-    "Scan any object, give it googly eyes and a personality, then talk to it.",
+    "Upload any photo, painting, or memory and have a voice conversation with it.",
 };
 
 export default function RootLayout({
@@ -17,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="font-sans min-h-screen bg-bg text-neutral-100 antialiased">
+      <body className="font-sans min-h-screen bg-bg antialiased">
         <Nav />
         <main className="max-w-lg mx-auto px-4 pb-24">{children}</main>
       </body>

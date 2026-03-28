@@ -14,7 +14,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { objectName, image } = await req.json();
+    const { objectName, image, mode } = await req.json();
 
     if (!image) {
       return NextResponse.json(
@@ -23,10 +23,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Generate googly-eyed image
-    const imageBuffer = await generateGooglyImage(image, objectName);
+    // Photo mode: upload original directly, no transformation
+    if (mode === "photo") {
+      const buffer = Buffer.from(image, "base64");
+      const key = `photos/${uuidv4()}.jpg`;
+      const imageUrl = await uploadToR2(key, buffer, "image/jpeg");
+      return NextResponse.json({ image_url: imageUrl });
+    }
 
-    // Upload to R2
+    // Character mode: generate googly-eyed image
+    const imageBuffer = await generateGooglyImage(image, objectName);
     const key = `googly/${uuidv4()}.jpg`;
     const imageUrl = await uploadToR2(key, imageBuffer, "image/jpeg");
 

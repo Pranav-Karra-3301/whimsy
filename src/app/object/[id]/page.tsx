@@ -21,7 +21,7 @@ export default async function ObjectPage({
     <div className="pt-6 space-y-5 fade-in">
       <Link
         href="/gallery"
-        className="inline-flex items-center gap-1 text-sm text-muted hover:text-white transition-colors"
+        className="inline-flex items-center gap-1 text-sm text-muted hover:text-[var(--text)] transition-colors"
       >
         <svg
           width="16"
@@ -41,22 +41,20 @@ export default async function ObjectPage({
         Gallery
       </Link>
 
-      <div className="rounded-3xl overflow-hidden bg-white">
+      <div className="rounded-3xl overflow-hidden bg-surface border border-border shadow-sm">
         <div className="aspect-square overflow-hidden">
           <img
             src={object.image_url}
             alt={object.name}
-            className="w-full h-full object-cover wobble-eyes"
+            className={`w-full h-full object-cover ${
+              object.mode === "character" ? "wobble-eyes" : ""
+            }`}
           />
         </div>
         <div className="px-5 py-4">
-          <h1 className="text-xl font-bold text-text-on-light">
-            {object.name}
-          </h1>
-          <p className="text-sm text-[var(--muted-on-light)] mt-1">
-            {object.backstory}
-          </p>
-          <div className="flex items-center gap-3 mt-3 text-xs text-[var(--muted-on-light)] font-mono">
+          <h1 className="text-xl font-bold">{object.name}</h1>
+          <p className="text-sm text-muted mt-1">{object.backstory}</p>
+          <div className="flex items-center gap-3 mt-3 text-xs text-muted font-mono">
             <span>
               Talked {object.times_talked_to} time
               {object.times_talked_to !== 1 ? "s" : ""}

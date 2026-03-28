@@ -20,6 +20,7 @@ export default __t.row({
   originalImageUrl: __t.string().name("original_image_url"),
   voiceId: __t.string().name("voice_id"),
   voiceName: __t.string().name("voice_name"),
+  mode: __t.string(),
   timesTalkedTo: __t.u32().name("times_talked_to"),
   createdAt: __t.timestamp().name("created_at"),
 });

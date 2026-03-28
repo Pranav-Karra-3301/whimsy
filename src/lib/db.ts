@@ -43,7 +43,7 @@ async function stdbCall(reducer: string, args: unknown[]): Promise<void> {
 }
 
 function rowToObject(row: unknown[]): NPCObject {
-  const createdAtMicros = (row[10] as number[])[0];
+  const createdAtMicros = (row[11] as number[])[0];
   return {
     id: row[0] as string,
     name: row[1] as string,
@@ -54,7 +54,8 @@ function rowToObject(row: unknown[]): NPCObject {
     original_image_url: row[6] as string,
     voice_id: row[7] as string,
     voice_name: row[8] as string,
-    times_talked_to: row[9] as number,
+    mode: ((row[9] as string) || "character") as "photo" | "character",
+    times_talked_to: row[10] as number,
     created_at: new Date(createdAtMicros / 1000).toISOString(),
   };
 }
@@ -89,6 +90,7 @@ export async function createObject(
     data.original_image_url,
     data.voice_id || "",
     data.voice_name || "",
+    data.mode || "character",
   ]);
 
   // Query back the created object for the server-assigned timestamp
@@ -114,6 +116,7 @@ export async function updateObject(
     updates.original_image_url ?? existing.original_image_url,
     updates.voice_id ?? existing.voice_id,
     updates.voice_name ?? existing.voice_name,
+    updates.mode ?? existing.mode,
   ]);
 
   return getObjectById(id);

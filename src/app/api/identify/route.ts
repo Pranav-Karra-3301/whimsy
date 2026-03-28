@@ -11,13 +11,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { image, mimeType } = await req.json();
+    const { image, mimeType, mode } = await req.json();
 
     if (!image) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
 
-    const result = await identifyObject(image, mimeType || "image/jpeg");
+    const result = await identifyObject(image, mimeType || "image/jpeg", mode || "character");
     return NextResponse.json(result);
   } catch (error) {
     console.error("Identify error:", error);

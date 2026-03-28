@@ -2,12 +2,12 @@
 
 import { useState, useCallback } from "react";
 
-interface CameraCaptureProps {
+interface ImageUploadProps {
   onCapture: (base64: string, previewUrl: string) => void;
   disabled?: boolean;
 }
 
-export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
+export function ImageUpload({ onCapture, disabled }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
 
   const handleFile = useCallback(
@@ -37,15 +37,15 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
       <div className="relative fade-in">
         <img
           src={preview}
-          alt="Captured photo"
+          alt="Selected photo"
           className="w-full aspect-[4/3] object-cover rounded-2xl"
         />
         {!disabled && (
           <button
             onClick={reset}
-            className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-sm text-sm text-white hover:bg-black/80 transition-colors"
+            className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-sm text-sm shadow-sm hover:bg-white transition-colors"
           >
-            Retake
+            Change
           </button>
         )}
       </div>
@@ -54,7 +54,7 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
 
   return (
     <div className="space-y-3 fade-in">
-      <label className="block w-full py-12 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.06] hover:border-white/20 transition-all text-center cursor-pointer">
+      <label className="block w-full py-12 rounded-2xl bg-surface border border-border shadow-sm hover:bg-surface-hover transition-all text-center cursor-pointer">
         <div className="text-3xl mb-2">📷</div>
         <span className="text-sm text-muted">Take a photo</span>
         <input
@@ -66,7 +66,7 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
           disabled={disabled}
         />
       </label>
-      <label className="block w-full py-4 rounded-2xl bg-white/[0.03] border border-dashed border-white/10 hover:bg-white/[0.06] hover:border-white/20 transition-all text-center cursor-pointer text-sm text-muted">
+      <label className="block w-full py-4 rounded-2xl bg-surface border border-dashed border-border shadow-sm hover:bg-surface-hover transition-all text-center cursor-pointer text-sm text-muted">
         Upload from gallery
         <input
           type="file"
