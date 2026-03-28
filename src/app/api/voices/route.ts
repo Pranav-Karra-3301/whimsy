@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
 
@@ -11,12 +20,13 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const pageSize = searchParams.get("page_size") || "20";
+  const limit = parseInt(searchParams.get("limit") || "18", 10);
   const search = searchParams.get("search") || "";
 
   try {
+    // Fetch a large pool so we can shuffle and return a varied set each time
     const url = new URL("https://api.elevenlabs.io/v2/voices");
-    url.searchParams.set("page_size", pageSize);
+    url.searchParams.set("page_size", "100");
     if (search) url.searchParams.set("search", search);
 
     const res = await fetch(url.toString(), {
@@ -32,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     const data = await res.json();
 
-    const voices = (data.voices ?? []).map(
+    const all = (data.voices ?? []).map(
       (v: { voice_id: string; name: string; labels?: Record<string, string>; preview_url?: string }) => ({
         voice_id: v.voice_id,
         name: v.name,
@@ -41,7 +51,10 @@ export async function GET(req: NextRequest) {
       })
     );
 
-    return NextResponse.json({ voices, has_more: data.has_more ?? false });
+    // Shuffle and return a subset for variety
+    const voices = shuffle(all).slice(0, limit);
+
+    return NextResponse.json({ voices, total: all.length });
   } catch (error) {
     console.error("Voices error:", error);
     return NextResponse.json(
