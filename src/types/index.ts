@@ -21,3 +21,10 @@ export interface IdentifyResponse {
 export interface GenerateImageResponse {
   image_url: string;
 }
+
+export interface Voice {
+  voice_id: string;
+  name: string;
+  labels?: Record<string, string>;
+  preview_url?: string;
+}
