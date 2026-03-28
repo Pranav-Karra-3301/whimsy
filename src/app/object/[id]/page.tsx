@@ -67,7 +67,7 @@ export default async function ObjectPage({
         objectId={object.id}
         objectName={object.name}
         personality={object.personality}
-        voiceId={object.voice_id}
+        voiceId={object.voice_id || ""}
       />
     </div>
   );
