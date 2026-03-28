@@ -159,7 +159,7 @@ export default function Home() {
               <img
                 src={googlyImageUrl}
                 alt={identity.name}
-                className="w-full aspect-[4/3] object-cover"
+                className="w-full aspect-square object-cover"
               />
               <div className="px-5 py-4">
                 <h2 className="text-lg font-bold text-text-on-light">

@@ -21,13 +21,16 @@ export async function generateGooglyImage(
             },
           },
           {
-            text: `Transform ${subject} into a fun cartoon character. Extract it from the background and place it on a clean white background. Add two large realistic-looking googly eyes — round, white, with glossy black pupils, slightly different sizes for a goofy look. Add a small cute expressive mouth. Add tiny cartoon arms and legs if appropriate. Make it look like a real toy or collectible figurine — a funny, endearing NPC character with personality. Keep the object recognizable but make it charming and alive.`,
+            text: `Transform ${subject} into a fun cartoon character on a plain white background. Center the character in a square composition. Extract the object from its original background completely. Add two large realistic-looking googly eyes — round, white, with glossy black pupils, slightly different sizes for a goofy look. Add a small cute expressive mouth. Add tiny cartoon arms and legs if appropriate. Make it look like a real toy or collectible figurine — a funny, endearing NPC character with personality. Keep the object recognizable but make it charming and alive. The background must be solid white.`,
           },
         ],
       },
     ],
     config: {
       responseModalities: ["TEXT", "IMAGE"],
+      imageConfig: {
+        aspectRatio: "1:1",
+      },
     },
   });
 

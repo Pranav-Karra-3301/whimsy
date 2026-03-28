@@ -33,11 +33,17 @@ export function Conversation({
     onError: (error) => console.error("Conversation error:", error),
   });
 
+  const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "";
+
   const start = useCallback(async () => {
+    if (!agentId) {
+      console.error("NEXT_PUBLIC_ELEVENLABS_AGENT_ID is not set");
+      return;
+    }
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       await conversation.startSession({
-        agentId: process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "",
+        agentId,
         dynamicVariables: {
           object_name: objectName,
           personality,
@@ -58,7 +64,7 @@ export function Conversation({
     } catch (error) {
       console.error("Failed to start:", error);
     }
-  }, [conversation, objectName, personality, voiceId]);
+  }, [conversation, objectName, personality, voiceId, agentId]);
 
   const stop = useCallback(async () => {
     await conversation.endSession();
