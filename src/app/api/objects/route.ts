@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllObjects, createObject } from "@/lib/db";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  if (searchParams.get("health") === "true") {
+    return NextResponse.json({
+      status: "ok",
+      endpoint: "/api/objects",
+    });
+  }
+
   try {
     const objects = getAllObjects();
     return NextResponse.json(objects);

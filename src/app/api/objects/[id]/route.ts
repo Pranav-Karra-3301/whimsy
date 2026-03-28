@@ -2,10 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getObjectById, updateObject, deleteObject, incrementTalkCount } from "@/lib/db";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  if (id === "health") {
+    return NextResponse.json({
+      status: "ok",
+      endpoint: "/api/objects/[id]",
+    });
+  }
+
   const object = getObjectById(id);
   if (!object) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

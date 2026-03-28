@@ -1,7 +1,7 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import type { IdentifyResponse } from "@/types";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
 const IDENTIFY_PROMPT = [
   "You are looking at a photo of an object. Identify it and give it a fun, quirky personality as if it were an NPC in a video game.",
@@ -19,19 +19,25 @@ export async function identifyObject(
   imageBase64: string,
   mimeType: string = "image/jpeg"
 ): Promise<IdentifyResponse> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-  const result = await model.generateContent([
-    {
-      inlineData: {
-        data: imageBase64,
-        mimeType,
+  const response = await ai.models.generateContent({
+    model: "gemini-2.0-flash",
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            inlineData: {
+              data: imageBase64,
+              mimeType,
+            },
+          },
+          { text: IDENTIFY_PROMPT },
+        ],
       },
-    },
-    { text: IDENTIFY_PROMPT },
-  ]);
+    ],
+  });
 
-  const text = result.response.text();
+  const text = response.text ?? "";
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     throw new Error("Failed to parse Gemini response as JSON");

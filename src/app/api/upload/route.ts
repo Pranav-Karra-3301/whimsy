@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { uploadToR2 } from "@/lib/r2";
 import { v4 as uuidv4 } from "uuid";
 
+export async function GET() {
+  return NextResponse.json({
+    status: "ok",
+    endpoint: "/api/upload",
+    r2: !!process.env.R2_ACCESS_KEY_ID,
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { image, mimeType } = await req.json();

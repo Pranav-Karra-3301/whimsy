@@ -3,6 +3,15 @@ import { generateGooglyImage } from "@/lib/nanobanana";
 import { uploadToR2 } from "@/lib/r2";
 import { v4 as uuidv4 } from "uuid";
 
+export async function GET() {
+  return NextResponse.json({
+    status: "ok",
+    endpoint: "/api/generate-image",
+    gemini: !!process.env.GEMINI_API_KEY,
+    r2: !!process.env.R2_ACCESS_KEY_ID,
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { objectName, image } = await req.json();

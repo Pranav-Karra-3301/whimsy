@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { identifyObject } from "@/lib/gemini";
 
+export async function GET() {
+  return NextResponse.json({
+    status: "ok",
+    endpoint: "/api/identify",
+    gemini: !!process.env.GEMINI_API_KEY,
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { image, mimeType } = await req.json();
