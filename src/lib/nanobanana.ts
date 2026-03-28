@@ -6,7 +6,7 @@ export async function generateGooglyImage(
   imageBase64: string,
   objectName?: string
 ): Promise<Buffer> {
-  const subject = objectName ? `the ${objectName}` : "the main object";
+  const subject = objectName ? `this ${objectName}` : "the main object in this photo";
 
   const response = await ai.models.generateContent({
     model: "gemini-3.1-flash-image-preview",
@@ -21,7 +21,7 @@ export async function generateGooglyImage(
             },
           },
           {
-            text: `Add two large cartoon googly eyes and a small cute cartoon mouth directly onto ${subject} in this photo. Keep everything else exactly the same — same background, same lighting, same composition. Only add the eyes and mouth. The eyes should be round, white with black pupils, slightly different sizes for a fun look. The mouth should be small and cute. Make it look funny and whimsical.`,
+            text: `Transform ${subject} into a fun cartoon character. Extract it from the background and place it on a clean white background. Add two large realistic-looking googly eyes — round, white, with glossy black pupils, slightly different sizes for a goofy look. Add a small cute expressive mouth. Add tiny cartoon arms and legs if appropriate. Make it look like a real toy or collectible figurine — a funny, endearing NPC character with personality. Keep the object recognizable but make it charming and alive.`,
           },
         ],
       },

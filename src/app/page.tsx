@@ -3,9 +3,8 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { CameraCapture } from "@/components/camera-capture";
-import { VoicePicker } from "@/components/voice-picker";
 import { Conversation } from "@/components/conversation";
-import type { IdentifyResponse, Voice } from "@/types";
+import type { IdentifyResponse } from "@/types";
 
 type Step = "capture" | "processing" | "result" | "saving";
 
@@ -14,25 +13,13 @@ export default function Home() {
   const [step, setStep] = useState<Step>("capture");
   const [error, setError] = useState("");
 
-  // Pipeline data
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [googlyImageUrl, setGooglyImageUrl] = useState<string | null>(null);
   const [identity, setIdentity] = useState<IdentifyResponse | null>(null);
-  const [voices, setVoices] = useState<Voice[]>([]);
-  const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
-  const [selectedVoiceName, setSelectedVoiceName] = useState<string | null>(
-    null
-  );
+  const [voiceId, setVoiceId] = useState("");
+  const [voiceName, setVoiceName] = useState("");
   const [talking, setTalking] = useState(false);
-
-  const handleVoiceSelect = useCallback(
-    (voiceId: string, voiceName: string) => {
-      setSelectedVoiceId(voiceId);
-      setSelectedVoiceName(voiceName);
-    },
-    []
-  );
 
   const handleCapture = useCallback(
     async (base64: string, preview: string) => {
@@ -53,7 +40,7 @@ export default function Home() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ image: base64 }),
           }),
-          fetch("/api/voices?limit=18"),
+          fetch("/api/voices?limit=50"),
         ]);
 
         if (!identifyRes.ok) throw new Error("Failed to identify object");
@@ -65,9 +52,18 @@ export default function Home() {
           ? await voicesRes.json()
           : { voices: [] };
 
+        // Auto-pick a random voice
+        const voices = voicesData.voices ?? [];
+        const pick = voices.length > 0
+          ? voices[Math.floor(Math.random() * voices.length)]
+          : null;
+
         setIdentity(identityData);
         setGooglyImageUrl(image_url);
-        setVoices(voicesData.voices ?? []);
+        if (pick) {
+          setVoiceId(pick.voice_id);
+          setVoiceName(pick.name);
+        }
         setStep("result");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
@@ -97,8 +93,8 @@ export default function Home() {
           ...identity,
           image_url: googlyImageUrl,
           original_image_url,
-          voice_id: selectedVoiceId || "",
-          voice_name: selectedVoiceName || "",
+          voice_id: voiceId,
+          voice_name: voiceName,
         }),
       });
       if (!saveRes.ok) throw new Error("Failed to save");
@@ -109,14 +105,7 @@ export default function Home() {
       setError(err instanceof Error ? err.message : "Failed to save");
       setStep("result");
     }
-  }, [
-    capturedImage,
-    googlyImageUrl,
-    identity,
-    selectedVoiceId,
-    selectedVoiceName,
-    router,
-  ]);
+  }, [capturedImage, googlyImageUrl, identity, voiceId, voiceName, router]);
 
   const handleRetake = useCallback(() => {
     if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
@@ -125,47 +114,47 @@ export default function Home() {
     setPreviewUrl(null);
     setGooglyImageUrl(null);
     setIdentity(null);
-    setSelectedVoiceId(null);
-    setSelectedVoiceName(null);
+    setVoiceId("");
+    setVoiceName("");
     setTalking(false);
     setError("");
   }, [previewUrl]);
 
   const showCapture = step === "capture" || step === "processing";
-  const isProcessing = step === "processing";
 
   return (
     <div className="pt-8 space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Scan an object</h1>
         <p className="text-sm text-muted mt-1">
-          Point your camera at anything. We&apos;ll give it googly eyes and a
-          personality.
+          Point your camera at anything. We&apos;ll turn it into a character you
+          can talk to.
         </p>
       </div>
 
-      {/* Capture + Processing: keep CameraCapture mounted so preview stays visible */}
+      {/* Capture + Processing */}
       {showCapture && (
         <>
           <CameraCapture
             onCapture={handleCapture}
-            disabled={isProcessing}
+            disabled={step === "processing"}
           />
-          {isProcessing && (
+          {step === "processing" && (
             <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/10 fade-in">
               <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              <p className="text-sm text-muted">Adding googly eyes...</p>
+              <p className="text-sm text-muted">
+                Creating your character...
+              </p>
             </div>
           )}
         </>
       )}
 
-      {/* Result step */}
+      {/* Result */}
       {(step === "result" || step === "saving") &&
         identity &&
         googlyImageUrl && (
           <div className="space-y-5 fade-in">
-            {/* Googly image card */}
             <div className="rounded-3xl overflow-hidden bg-white">
               <img
                 src={googlyImageUrl}
@@ -179,20 +168,16 @@ export default function Home() {
                 <p className="text-sm text-[var(--muted-on-light)] mt-1">
                   {identity.backstory}
                 </p>
+                {voiceName && (
+                  <p className="text-xs text-[var(--muted-on-light)] mt-2 font-mono">
+                    Voice: {voiceName}
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* Voice picker */}
-            {!talking && (
-              <VoicePicker
-                voices={voices}
-                selectedVoiceId={selectedVoiceId}
-                onSelect={handleVoiceSelect}
-              />
-            )}
-
-            {/* Talk / Conversation */}
-            {!talking && selectedVoiceId && (
+            {/* Talk */}
+            {!talking && voiceId && (
               <button
                 onClick={() => setTalking(true)}
                 className="w-full py-3.5 rounded-2xl bg-accent text-bg font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-all"
@@ -201,12 +186,12 @@ export default function Home() {
               </button>
             )}
 
-            {talking && selectedVoiceId && (
+            {talking && voiceId && (
               <Conversation
                 objectId=""
                 objectName={identity.name}
                 personality={identity.personality}
-                voiceId={selectedVoiceId}
+                voiceId={voiceId}
               />
             )}
 
