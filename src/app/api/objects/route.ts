@@ -7,11 +7,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       status: "ok",
       endpoint: "/api/objects",
+      spacetimedb: !!process.env.SPACETIMEDB_TOKEN,
     });
   }
 
   try {
-    const objects = getAllObjects();
+    const objects = await getAllObjects();
     return NextResponse.json(objects);
   } catch (error) {
     console.error("List objects error:", error);
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const object = createObject({
+    const object = await createObject({
       name,
       personality,
       backstory: backstory || "",

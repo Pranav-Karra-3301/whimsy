@@ -1,85 +1,137 @@
 import { NPCObject } from "@/types";
 import { v4 as uuidv4 } from "uuid";
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
-import { join } from "path";
 
-// Simple JSON file-based storage as a starting point.
-// Replace with SpaceTimeDB once the module is deployed.
+const STDB_URI = process.env.SPACETIMEDB_URI!;
+const STDB_MODULE = process.env.SPACETIMEDB_MODULE!;
+const STDB_TOKEN = process.env.SPACETIMEDB_TOKEN!;
 
-const DATA_DIR = join(process.cwd(), ".data");
-const DB_FILE = join(DATA_DIR, "objects.json");
+async function stdbSQL(query: string): Promise<unknown[][]> {
+  const res = await fetch(`${STDB_URI}/v1/database/${STDB_MODULE}/sql`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${STDB_TOKEN}`,
+    },
+    body: query,
+  });
 
-function ensureDataDir() {
-  if (!existsSync(DATA_DIR)) {
-    mkdirSync(DATA_DIR, { recursive: true });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`SpaceTimeDB SQL error: ${text}`);
   }
+
+  const data = await res.json();
+  return data[0]?.rows ?? [];
 }
 
-function readDB(): NPCObject[] {
-  ensureDataDir();
-  if (!existsSync(DB_FILE)) {
-    writeFileSync(DB_FILE, "[]");
-    return [];
-  }
-  const data = readFileSync(DB_FILE, "utf-8");
-  return JSON.parse(data);
-}
-
-function writeDB(objects: NPCObject[]) {
-  ensureDataDir();
-  writeFileSync(DB_FILE, JSON.stringify(objects, null, 2));
-}
-
-export function getAllObjects(): NPCObject[] {
-  return readDB().sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+async function stdbCall(reducer: string, args: unknown[]): Promise<void> {
+  const res = await fetch(
+    `${STDB_URI}/v1/database/${STDB_MODULE}/call/${reducer}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${STDB_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(args),
+    }
   );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`SpaceTimeDB reducer '${reducer}' error: ${text}`);
+  }
 }
 
-export function getObjectById(id: string): NPCObject | undefined {
-  return readDB().find((o) => o.id === id);
-}
-
-export function createObject(
-  data: Omit<NPCObject, "id" | "times_talked_to" | "created_at">
-): NPCObject {
-  const objects = readDB();
-  const newObject: NPCObject = {
-    ...data,
-    id: uuidv4(),
-    times_talked_to: 0,
-    created_at: new Date().toISOString(),
+function rowToObject(row: unknown[]): NPCObject {
+  const createdAtMicros = (row[9] as number[])[0];
+  return {
+    id: row[0] as string,
+    name: row[1] as string,
+    personality: row[2] as string,
+    backstory: row[3] as string,
+    voice_description: row[4] as string,
+    image_url: row[5] as string,
+    original_image_url: row[6] as string,
+    voice_id: (row[7] as string) || undefined,
+    times_talked_to: row[8] as number,
+    created_at: new Date(createdAtMicros / 1000).toISOString(),
   };
-  objects.push(newObject);
-  writeDB(objects);
-  return newObject;
 }
 
-export function updateObject(
+export async function getAllObjects(): Promise<NPCObject[]> {
+  const rows = await stdbSQL(
+    "SELECT * FROM npc_object ORDER BY created_at DESC"
+  );
+  return rows.map(rowToObject);
+}
+
+export async function getObjectById(
+  id: string
+): Promise<NPCObject | undefined> {
+  const rows = await stdbSQL(
+    `SELECT * FROM npc_object WHERE id = '${id.replace(/'/g, "''")}'`
+  );
+  return rows.length > 0 ? rowToObject(rows[0]) : undefined;
+}
+
+export async function createObject(
+  data: Omit<NPCObject, "id" | "times_talked_to" | "created_at">
+): Promise<NPCObject> {
+  const id = uuidv4();
+  await stdbCall("create_object", [
+    id,
+    data.name,
+    data.personality,
+    data.backstory,
+    data.voice_description,
+    data.image_url,
+    data.original_image_url,
+    data.voice_id || "",
+  ]);
+
+  // Query back the created object for the server-assigned timestamp
+  const obj = await getObjectById(id);
+  if (!obj) throw new Error("Failed to create object");
+  return obj;
+}
+
+export async function updateObject(
   id: string,
   updates: Partial<NPCObject>
-): NPCObject | undefined {
-  const objects = readDB();
-  const index = objects.findIndex((o) => o.id === id);
-  if (index === -1) return undefined;
-  objects[index] = { ...objects[index], ...updates };
-  writeDB(objects);
-  return objects[index];
+): Promise<NPCObject | undefined> {
+  const existing = await getObjectById(id);
+  if (!existing) return undefined;
+
+  await stdbCall("update_object", [
+    id,
+    updates.name ?? existing.name,
+    updates.personality ?? existing.personality,
+    updates.backstory ?? existing.backstory,
+    updates.voice_description ?? existing.voice_description,
+    updates.image_url ?? existing.image_url,
+    updates.original_image_url ?? existing.original_image_url,
+    updates.voice_id ?? existing.voice_id ?? "",
+  ]);
+
+  return getObjectById(id);
 }
 
-export function deleteObject(id: string): boolean {
-  const objects = readDB();
-  const filtered = objects.filter((o) => o.id !== id);
-  if (filtered.length === objects.length) return false;
-  writeDB(filtered);
-  return true;
+export async function deleteObject(id: string): Promise<boolean> {
+  try {
+    await stdbCall("delete_object", [id]);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-export function incrementTalkCount(id: string): NPCObject | undefined {
-  const objects = readDB();
-  const obj = objects.find((o) => o.id === id);
-  if (!obj) return undefined;
-  obj.times_talked_to += 1;
-  writeDB(objects);
-  return obj;
+export async function incrementTalkCount(
+  id: string
+): Promise<NPCObject | undefined> {
+  try {
+    await stdbCall("increment_talk_count", [id]);
+    return getObjectById(id);
+  } catch {
+    return undefined;
+  }
 }

@@ -3,8 +3,8 @@ import { ObjectCard } from "@/components/object-card";
 
 export const dynamic = "force-dynamic";
 
-export default function GalleryPage() {
-  const objects = getAllObjects();
+export default async function GalleryPage() {
+  const objects = await getAllObjects();
 
   return (
     <div className="space-y-6 pt-4">

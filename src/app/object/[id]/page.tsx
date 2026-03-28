@@ -11,7 +11,7 @@ export default async function ObjectPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const object = getObjectById(id);
+  const object = await getObjectById(id);
 
   if (!object) {
     notFound();
