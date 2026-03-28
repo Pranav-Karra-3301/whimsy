@@ -37,6 +37,9 @@ yarn-error.log*
 # local db
 .data/
 
+# rust build artifacts
+**/target/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
