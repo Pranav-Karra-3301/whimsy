@@ -1,7 +1,6 @@
 "use client";
 
-import { ConversationProvider, useConversation } from "@elevenlabs/react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 interface ConversationProps {
   objectId: string;
@@ -12,126 +11,171 @@ interface ConversationProps {
 }
 
 interface Message {
-  role: "agent" | "user";
+  role: "user" | "assistant";
   text: string;
 }
 
-type Status = "idle" | "connecting" | "connected" | "ended";
+type Status = "idle" | "recording" | "processing" | "playing" | "ended";
 
-function ConversationInner({
+export function Conversation({
   objectId,
   objectName,
   personality,
+  voiceId,
   imageUrl,
 }: ConversationProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
+  const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState("");
 
-  const conversation = useConversation({
-    onConnect: () => {
-      console.log("[ElevenLabs] Connected");
-      setStatus("connected");
-    },
-    onDisconnect: (details) => {
-      console.log("[ElevenLabs] Disconnected:", JSON.stringify(details));
-      setStatus("ended");
-      if (objectId) {
-        fetch(`/api/objects/${objectId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ increment_talk: true }),
-        });
-      }
-    },
-    onError: (err) => {
-      console.error("[ElevenLabs] Error:", err);
-      setError(typeof err === "string" ? err : "Connection failed.");
-      setStatus("ended");
-    },
-    onMessage: (msg) => {
-      if (msg.source === "ai" && msg.message) {
-        setMessages((prev) => [...prev, { role: "agent", text: msg.message }]);
-      } else if (msg.source === "user" && msg.message) {
-        setMessages((prev) => [...prev, { role: "user", text: msg.message }]);
-      }
-    },
-  });
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "";
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }, 50);
+  }, []);
 
-  const start = useCallback(async () => {
-    if (!agentId) {
-      setError("ElevenLabs agent not configured.");
-      return;
-    }
-
+  const startRecording = useCallback(async () => {
     setError("");
-    setMessages([]);
-
-    // Get mic permission first
     try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported("audio/webm")
+          ? "audio/webm"
+          : "audio/mp4",
+      });
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      recorder.start();
+      recorderRef.current = recorder;
+      setStatus("recording");
     } catch {
       setError("Microphone access is required.");
-      return;
     }
+  }, []);
 
-    // Show connecting screen immediately
-    setStatus("connecting");
+  const stopRecording = useCallback(async () => {
+    const recorder = recorderRef.current;
+    if (!recorder || recorder.state !== "recording") return;
 
-    // Start session with only dynamicVariables (no overrides — avoids
-    // agent security rejections)
-    conversation.startSession({
-      agentId,
-      dynamicVariables: {
-        object_name: objectName,
-        personality,
-      },
+    setStatus("processing");
+
+    const audioBlob = await new Promise<Blob>((resolve) => {
+      recorder.onstop = () => {
+        resolve(new Blob(chunksRef.current, { type: recorder.mimeType }));
+      };
+      recorder.stop();
+      recorder.stream.getTracks().forEach((t) => t.stop());
     });
-  }, [conversation, objectName, personality, agentId]);
 
-  const stop = useCallback(() => {
-    conversation.endSession();
-  }, [conversation]);
+    // Convert to base64
+    const buffer = await audioBlob.arrayBuffer();
+    const base64 = btoa(
+      new Uint8Array(buffer).reduce((s, b) => s + String.fromCharCode(b), "")
+    );
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          audio: base64,
+          history: messages,
+          character: { name: objectName, personality },
+          voiceId,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Chat failed");
+
+      const data = await res.json();
+
+      // Add messages to transcript
+      const newMessages: Message[] = [];
+      if (data.transcript) {
+        newMessages.push({ role: "user", text: data.transcript });
+      }
+      if (data.response) {
+        newMessages.push({ role: "assistant", text: data.response });
+      }
+      setMessages((prev) => [...prev, ...newMessages]);
+      scrollToBottom();
+
+      // Play TTS audio
+      if (data.audio) {
+        setStatus("playing");
+        const audio = new Audio(`data:audio/mpeg;base64,${data.audio}`);
+        audioRef.current = audio;
+        audio.onended = () => setStatus("idle");
+        audio.onerror = () => setStatus("idle");
+        audio.play().catch(() => setStatus("idle"));
+      } else {
+        setStatus("idle");
+      }
+    } catch {
+      setError("Failed to get response. Try again.");
+      setStatus("idle");
+    }
+  }, [messages, objectName, personality, voiceId, scrollToBottom]);
+
+  const endConversation = useCallback(() => {
+    audioRef.current?.pause();
+    recorderRef.current?.stream?.getTracks().forEach((t) => t.stop());
+    setStatus("ended");
+    if (objectId) {
+      fetch(`/api/objects/${objectId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ increment_talk: true }),
+      });
+    }
+  }, [objectId]);
 
   const close = useCallback(() => {
+    setOpen(false);
     setStatus("idle");
     setMessages([]);
     setError("");
   }, []);
 
-  // Idle — show start button
-  if (status === "idle") {
+  // Start button
+  if (!open) {
     return (
-      <div className="space-y-3">
-        <button
-          onClick={start}
-          className="w-full py-3.5 rounded-2xl bg-accent text-bg font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-all"
-        >
-          Talk to {objectName}
-        </button>
-        {error && (
-          <p className="text-sm text-red-400 text-center">{error}</p>
-        )}
-      </div>
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full py-3.5 rounded-2xl bg-accent text-bg font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-all"
+      >
+        Talk to {objectName}
+      </button>
     );
   }
 
-  // Voice mode screen (connecting / connected / ended)
+  // Full-screen voice mode
   const statusText =
-    status === "connecting"
-      ? "Connecting..."
-      : status === "ended"
-        ? "Conversation ended"
-        : conversation.isSpeaking
+    status === "recording"
+      ? "Listening..."
+      : status === "processing"
+        ? "Thinking..."
+        : status === "playing"
           ? `${objectName} is speaking...`
-          : "Listening...";
+          : status === "ended"
+            ? "Conversation ended"
+            : "Tap and hold to talk";
 
   return (
     <div className="fixed inset-0 z-50 bg-bg flex flex-col fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 safe-top">
+      <div className="flex items-center justify-between px-4 pt-safe-top py-3">
         {status === "ended" ? (
           <button
             onClick={close}
@@ -141,9 +185,8 @@ function ConversationInner({
           </button>
         ) : (
           <button
-            onClick={stop}
-            disabled={status === "connecting"}
-            className="px-4 py-2 rounded-xl bg-white/[0.06] border border-white/10 text-sm hover:bg-white/[0.1] transition-colors disabled:opacity-50"
+            onClick={endConversation}
+            className="px-4 py-2 rounded-xl bg-white/[0.06] border border-white/10 text-sm hover:bg-white/[0.1] transition-colors"
           >
             End
           </button>
@@ -153,41 +196,33 @@ function ConversationInner({
       </div>
 
       {/* Character */}
-      <div className="flex-shrink-0 flex justify-center px-8 pt-4 pb-3">
+      <div className="flex-shrink-0 flex justify-center pt-4 pb-2">
         {imageUrl ? (
-          <div className="relative">
-            <img
-              src={imageUrl}
-              alt={objectName}
-              className={`w-36 h-36 rounded-3xl object-cover bg-white ${
-                conversation.isSpeaking ? "wobble-eyes" : ""
-              }`}
-            />
-            {status === "connected" && (
-              <div className="absolute -bottom-1 -right-1">
-                <div className="relative flex items-center justify-center">
-                  <div className="w-3 h-3 rounded-full bg-accent" />
-                  <div className="absolute w-3 h-3 rounded-full bg-accent pulse-ring" />
-                </div>
-              </div>
-            )}
-          </div>
+          <img
+            src={imageUrl}
+            alt={objectName}
+            className={`w-36 h-36 rounded-3xl object-cover bg-white ${
+              status === "playing" ? "wobble-eyes" : ""
+            }`}
+          />
         ) : (
           <div className="w-36 h-36 rounded-3xl bg-white/10 flex items-center justify-center text-5xl">
             👀
           </div>
         )}
       </div>
-
-      <p className="text-center text-lg font-bold px-4 pb-2">{objectName}</p>
+      <p className="text-center text-lg font-bold pb-3">{objectName}</p>
 
       {/* Transcript */}
-      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-6 space-y-3">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-4 pb-4 space-y-3"
+      >
         {messages.map((msg, i) => (
           <div
             key={i}
             className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-              msg.role === "agent"
+              msg.role === "assistant"
                 ? "bg-white/[0.06] mr-auto"
                 : "bg-accent/20 ml-auto text-right"
             }`}
@@ -195,32 +230,59 @@ function ConversationInner({
             {msg.text}
           </div>
         ))}
-        {messages.length === 0 && status === "connecting" && (
-          <div className="flex flex-col items-center gap-3 pt-12">
-            <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-            <p className="text-sm text-muted">Connecting...</p>
+        {status === "processing" && (
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/[0.06] mr-auto max-w-[85%]">
+            <div className="w-1.5 h-1.5 rounded-full bg-muted animate-pulse" />
+            <div
+              className="w-1.5 h-1.5 rounded-full bg-muted animate-pulse"
+              style={{ animationDelay: "0.2s" }}
+            />
+            <div
+              className="w-1.5 h-1.5 rounded-full bg-muted animate-pulse"
+              style={{ animationDelay: "0.4s" }}
+            />
           </div>
-        )}
-        {messages.length === 0 && status === "connected" && (
-          <p className="text-center text-sm text-muted pt-12">
-            Say something...
-          </p>
         )}
       </div>
 
-      {error && (
-        <div className="px-4 pb-4">
-          <p className="text-sm text-red-400 text-center">{error}</p>
+      {/* Push-to-talk button */}
+      {status !== "ended" && (
+        <div className="flex-shrink-0 px-4 pb-8 pt-2 flex flex-col items-center gap-2">
+          {error && (
+            <p className="text-sm text-red-400 text-center">{error}</p>
+          )}
+          <button
+            onTouchStart={startRecording}
+            onTouchEnd={stopRecording}
+            onMouseDown={startRecording}
+            onMouseUp={stopRecording}
+            disabled={status === "processing" || status === "playing"}
+            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all disabled:opacity-40 ${
+              status === "recording"
+                ? "bg-red-500 scale-110"
+                : "bg-white/10 hover:bg-white/15 active:scale-110 active:bg-red-500"
+            }`}
+          >
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" y1="19" x2="12" y2="22" />
+            </svg>
+          </button>
+          <p className="text-xs text-muted">
+            {status === "recording" ? "Release to send" : "Hold to talk"}
+          </p>
         </div>
       )}
     </div>
-  );
-}
-
-export function Conversation(props: ConversationProps) {
-  return (
-    <ConversationProvider>
-      <ConversationInner {...props} />
-    </ConversationProvider>
   );
 }
