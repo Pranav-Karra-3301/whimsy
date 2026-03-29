@@ -15,6 +15,14 @@
   --accent-light: #FBF3EF;
   --text: #1A1917;
   --text-secondary: #6B6966;
+
+  /* CRT phosphor colors */
+  --crt-green: #33ff66;
+  --crt-green-dim: #1a9e3f;
+  --crt-green-glow: rgba(51, 255, 102, 0.4);
+  --crt-amber: #ffb347;
+  --crt-bg: #0a0a08;
+  --crt-bezel: #1a1a18;
 }
 
 body {
@@ -39,6 +47,187 @@ body {
 img {
   transition: opacity 0.4s ease;
 }
+
+/* ============================================
+   CRT MONITOR EFFECT
+   Inspired by cool-retro-term-webgl
+   CSS-only implementation for mobile compat
+   ============================================ */
+
+/* Monitor bezel — the outer CRT body */
+.crt-monitor {
+  background: var(--crt-bezel);
+  border-radius: 20px;
+  padding: 12px;
+  box-shadow:
+    0 0 0 2px #222220,
+    0 0 0 4px #0f0f0e,
+    0 8px 40px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+@media (min-width: 640px) {
+  .crt-monitor {
+    border-radius: 28px;
+    padding: 16px;
+  }
+}
+
+/* The glass screen inside the bezel */
+.crt-screen {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--crt-bg);
+}
+
+@media (min-width: 640px) {
+  .crt-screen {
+    border-radius: 16px;
+  }
+}
+
+/* Scanlines — repeating 2px horizontal lines */
+.crt-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.12) 0px,
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  mix-blend-mode: multiply;
+}
+
+/* Vignette + curvature glow on the screen */
+.crt-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 21;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+  box-shadow:
+    inset 0 0 60px rgba(0, 0, 0, 0.3),
+    inset 0 0 120px rgba(0, 0, 0, 0.15);
+}
+
+/* Flicker animation — subtle brightness oscillation */
+@keyframes crt-flicker {
+  0%, 100% { opacity: 1; }
+  4% { opacity: 0.97; }
+  8% { opacity: 1; }
+  12% { opacity: 0.98; }
+  16% { opacity: 1; }
+  50% { opacity: 1; }
+  54% { opacity: 0.96; }
+  58% { opacity: 1; }
+}
+
+.crt-flicker {
+  animation: crt-flicker 4s ease-in-out infinite;
+}
+
+/* Glowing scan beam — a bright line that sweeps down */
+@keyframes crt-scanbeam {
+  0% { top: -6%; }
+  100% { top: 106%; }
+}
+
+.crt-scanbeam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 6%;
+  z-index: 19;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(51, 255, 102, 0.04),
+    rgba(51, 255, 102, 0.06),
+    rgba(51, 255, 102, 0.04),
+    transparent
+  );
+  animation: crt-scanbeam 8s linear infinite;
+}
+
+/* Phosphor text glow */
+.crt-text {
+  color: var(--crt-green);
+  text-shadow:
+    0 0 4px var(--crt-green-glow),
+    0 0 10px rgba(51, 255, 102, 0.15);
+}
+
+.crt-text-dim {
+  color: var(--crt-green-dim);
+  text-shadow: 0 0 4px rgba(51, 255, 102, 0.15);
+}
+
+.crt-text-amber {
+  color: var(--crt-amber);
+  text-shadow:
+    0 0 4px rgba(255, 179, 71, 0.4),
+    0 0 10px rgba(255, 179, 71, 0.15);
+}
+
+/* RGB chromatic aberration on the image */
+.crt-rgb-shift {
+  filter:
+    drop-shadow(1px 0 0 rgba(255, 0, 0, 0.15))
+    drop-shadow(-1px 0 0 rgba(0, 100, 255, 0.15));
+}
+
+/* Screen reflection — a subtle highlight across the glass */
+.crt-reflection {
+  position: absolute;
+  inset: 0;
+  z-index: 22;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    transparent 40%,
+    transparent 60%,
+    rgba(255, 255, 255, 0.01) 100%
+  );
+}
+
+/* Power indicator LED */
+.crt-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--crt-green);
+  box-shadow: 0 0 4px var(--crt-green-glow), 0 0 8px rgba(51, 255, 102, 0.2);
+}
+
+.crt-led-off {
+  background: #333;
+  box-shadow: none;
+}
+
+/* CRT image effect — desaturated with green tint */
+.crt-image {
+  filter: saturate(0.3) brightness(0.7) contrast(1.1);
+  mix-blend-mode: screen;
+}
+
+/* ============================================
+   END CRT EFFECTS
+   ============================================ */
 
 @keyframes wobble {
   0%, 100% { transform: rotate(-2deg); }
