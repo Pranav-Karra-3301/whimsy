@@ -186,25 +186,25 @@ export function Conversation({
       {/* 3D Bezel frame */}
       <div className="crt-bezel" />
 
-      {/* ── Screen content ── */}
-      <div className="relative z-10 flex flex-col h-full">
+      {/* Curvature glass effect */}
+      <div className="crt-curvature" />
+
+      {/* ── Screen content (padded inside bezel) ── */}
+      <div className="relative z-10 flex flex-col h-full pt-[20px] pb-[20px] pl-[20px] pr-[20px] sm:pt-[28px] sm:pb-[28px] sm:pl-[28px] sm:pr-[28px]">
         {/* Top status bar */}
-        <div
-          className="flex items-center justify-between px-5 sm:px-8 pb-2 border-b border-[var(--crt-green)]/10"
-          style={{ paddingTop: "max(env(safe-area-inset-top, 12px), 12px)" }}
-        >
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3">
             {status === "ended" ? (
               <button
                 onClick={close}
-                className="font-mono text-xs crt-text hover:brightness-125 transition-all px-3 py-1.5 border border-[var(--crt-green)]/30 rounded"
+                className="font-mono text-xs crt-text hover:brightness-125 transition-all"
               >
                 [EXIT]
               </button>
             ) : (
               <button
                 onClick={endConversation}
-                className="font-mono text-xs crt-text-dim hover:text-[var(--crt-green)] transition-colors px-3 py-1.5 border border-[var(--crt-green)]/15 rounded"
+                className="font-mono text-xs crt-text-dim hover:text-[var(--crt-green)] transition-colors"
               >
                 [END]
               </button>
@@ -230,20 +230,20 @@ export function Conversation({
         </div>
 
         {/* Character display */}
-        <div className="flex-shrink-0 flex flex-col items-center py-5 sm:py-8 px-5">
+        <div className="flex-shrink-0 flex flex-col items-center py-4 sm:py-6 px-4">
           {imageUrl ? (
             <div className="relative">
               <div className="absolute -inset-4 rounded-2xl bg-[var(--crt-green)]/[0.04] blur-2xl" />
               <img
                 src={imageUrl}
                 alt={objectName}
-                className={`relative w-28 h-28 sm:w-36 sm:h-36 rounded-xl object-cover crt-image crt-rgb-shift border border-[var(--crt-green)]/20 ${
+                className={`relative w-28 h-28 sm:w-36 sm:h-36 rounded-xl object-cover crt-image crt-rgb-shift ${
                   status === "playing" ? "wobble-eyes" : ""
                 }`}
               />
             </div>
           ) : (
-            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl border border-[var(--crt-green)]/20 flex items-center justify-center">
+            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl bg-[var(--crt-green)]/[0.03] flex items-center justify-center">
               <span className="crt-text font-mono text-3xl">?</span>
             </div>
           )}
@@ -257,13 +257,10 @@ export function Conversation({
           )}
         </div>
 
-        {/* Separator */}
-        <div className="mx-5 sm:mx-8 border-t border-[var(--crt-green)]/10" />
-
         {/* Messages */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto px-5 sm:px-8 py-3 space-y-2.5 min-h-0"
+          className="flex-1 overflow-y-auto px-4 sm:px-6 py-2 space-y-2.5 min-h-0"
         >
           {messages.map((msg, i) => (
             <div
@@ -307,12 +304,7 @@ export function Conversation({
 
         {/* Push-to-talk */}
         {status !== "ended" && (
-          <div
-            className="flex-shrink-0 px-5 sm:px-8 pt-3 flex flex-col items-center gap-2 border-t border-[var(--crt-green)]/10"
-            style={{
-              paddingBottom: "max(env(safe-area-inset-bottom, 20px), 20px)",
-            }}
-          >
+          <div className="flex-shrink-0 px-4 sm:px-6 pt-3 pb-4 flex flex-col items-center gap-2">
             {error && (
               <p className="font-mono text-[11px] text-red-400 text-center">
                 ERR: {error}
@@ -353,12 +345,7 @@ export function Conversation({
 
         {/* Ended state */}
         {status === "ended" && (
-          <div
-            className="flex-shrink-0 px-5 pt-5 flex flex-col items-center border-t border-[var(--crt-green)]/10"
-            style={{
-              paddingBottom: "max(env(safe-area-inset-bottom, 24px), 24px)",
-            }}
-          >
+          <div className="flex-shrink-0 px-4 pt-5 pb-4 flex flex-col items-center">
             <p className="font-mono text-[11px] crt-text-dim tracking-[0.3em]">
               — END TRANSMISSION —
             </p>
