@@ -1,7 +1,15 @@
 "use client";
 
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { CRTScreen } from "./crt-screen";
 
 interface ConversationProps {
@@ -70,7 +78,7 @@ function ConversationScreen({
   setMicMuted,
 }: ConversationProps & {
   micMuted: boolean;
-  setMicMuted: (value: boolean) => void;
+  setMicMuted: Dispatch<SetStateAction<boolean>>;
 }) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
@@ -155,7 +163,7 @@ function ConversationScreen({
   const openConversation = useCallback(() => {
     setMessages([]);
     setError("");
-    setMicMuted(true);
+    setMicMuted(false);
     setOpen(true);
     setStatus("connecting");
     endedRef.current = false;
@@ -176,11 +184,11 @@ function ConversationScreen({
     });
   }, [backstory, objectName, personality, setMicMuted, startSession, voiceId]);
 
-  const togglePushToTalk = useCallback(() => {
+  const toggleMicrophone = useCallback(() => {
     if (sessionStatus !== "connected") return;
     setError("");
-    setMicMuted(!micMuted);
-  }, [micMuted, sessionStatus, setMicMuted]);
+    setMicMuted((current) => !current);
+  }, [sessionStatus, setMicMuted]);
 
   const endConversation = useCallback(() => {
     persistTalkCount();
@@ -294,7 +302,7 @@ function ConversationScreen({
               </p>
             )}
             <button
-              onClick={togglePushToTalk}
+              onClick={toggleMicrophone}
               disabled={sessionStatus !== "connected"}
               className={`pointer-events-auto w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-20 border-2 ${
                 status === "recording"
