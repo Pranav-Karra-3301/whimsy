@@ -183,14 +183,11 @@ export function Conversation({
       {/* Glass reflection */}
       <div className="crt-reflection" />
 
-      {/* 3D Bezel frame */}
+      {/* Bezel frame (radial gradient overlay) */}
       <div className="crt-bezel" />
 
-      {/* Curvature glass effect */}
-      <div className="crt-curvature" />
-
-      {/* ── Screen content (padded inside bezel) ── */}
-      <div className="relative z-10 flex flex-col h-full pt-[20px] pb-[20px] pl-[20px] pr-[20px] sm:pt-[28px] sm:pb-[28px] sm:pl-[28px] sm:pr-[28px]">
+      {/* ── Screen content ── */}
+      <div className="relative z-10 flex flex-col h-full">
         {/* Top status bar */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3">

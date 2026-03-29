@@ -56,77 +56,54 @@ img {
    Matched to cool-retro-term-webgl reference
    ============================================ */
 
-/* ── Bezel: 3D monitor frame with screen curvature ── */
+/*
+ * Bezel + curvature: matches TerminalFrame shader defaults
+ * frameMargin: 30px, screenCurvature: 0.1
+ * frameColor: green-tinted gray (mix of #ffffff, #0ccc68, #000000)
+ */
+
+/* Outer bezel — the physical CRT casing */
 .crt-bezel {
   position: fixed;
   inset: 0;
   z-index: 50;
   pointer-events: none;
-  /* Thick rounded bezel border */
-  border: 20px solid var(--crt-bezel);
-  border-radius: 22px;
-  box-shadow:
-    /* outer drop shadow behind the monitor */
-    0 10px 80px rgba(0, 0, 0, 0.8),
-    0 4px 20px rgba(0, 0, 0, 0.5),
-    /* outer bevel highlight — top/left lighter edge */
-    inset 0 1px 0 0 var(--crt-bezel-outer),
-    inset 1px 0 0 0 rgba(255, 255, 255, 0.03),
-    /* inner dark rim — screen sinks into bezel */
-    inset 0 0 0 3px var(--crt-bezel-inner),
-    /* deep inner shadow for curvature depth */
-    inset 0 0 40px rgba(0, 0, 0, 0.7),
-    inset 0 0 100px rgba(0, 0, 0, 0.3);
-  background: transparent;
-}
-
-@media (min-width: 640px) {
-  .crt-bezel {
-    border-width: 28px;
-    border-radius: 28px;
-  }
-}
-
-/* ── Screen curvature: convex glass illusion ── */
-.crt-curvature {
-  position: fixed;
-  /* Inset inside the bezel */
-  top: 20px;
-  left: 20px;
-  right: 20px;
-  bottom: 20px;
-  z-index: 43;
-  pointer-events: none;
-  border-radius: 6px;
-  /* Bright edge highlight simulating curved glass catching light */
-  box-shadow:
-    inset 0 0 60px rgba(12, 204, 104, 0.03),
-    inset 2px 2px 0 rgba(255, 255, 255, 0.02),
-    inset -2px -2px 0 rgba(0, 0, 0, 0.15);
-  /* Subtle curved-glass gradient */
+  border-radius: 16px;
+  /* The bezel is drawn as a vignette-style overlay.
+     The centre is transparent (screen visible), edges are opaque
+     dark gray-green (matching reference frameColor computation:
+     mix(#fff, mix(#0ccc68, #000, 0.2), 0.44) ≈ #394a3f) */
   background:
-    /* top-left glass reflection */
+    /* Screen opening — transparent centre */
     radial-gradient(
-      ellipse 50% 50% at 25% 25%,
-      rgba(255, 255, 255, 0.015) 0%,
-      transparent 70%
-    ),
-    /* bottom-right shadow */
-    radial-gradient(
-      ellipse 50% 50% at 75% 75%,
-      rgba(0, 0, 0, 0.08) 0%,
-      transparent 70%
+      ellipse 92% 94% at 50% 50%,
+      transparent 0%,
+      transparent 82%,
+      /* Soft transition into bezel */
+      rgba(40, 52, 44, 0.6) 86%,
+      rgba(40, 52, 44, 0.85) 89%,
+      /* Solid bezel */
+      rgb(42, 48, 44) 92%,
+      rgb(38, 42, 40) 100%
     );
+  box-shadow:
+    /* Outer monitor drop-shadow */
+    0 12px 80px rgba(0, 0, 0, 0.85),
+    0 4px 24px rgba(0, 0, 0, 0.5),
+    /* Inner screen-sink shadow — glass recessed into bezel */
+    inset 0 0 80px rgba(0, 0, 0, 0.5),
+    inset 0 0 160px rgba(0, 0, 0, 0.2);
 }
 
-@media (min-width: 640px) {
-  .crt-curvature {
-    top: 28px;
-    left: 28px;
-    right: 28px;
-    bottom: 28px;
-    border-radius: 8px;
-  }
+/* Bezel edge highlight — simulates plastic catching light */
+.crt-bezel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 /* ── Scanlines: thick visible horizontal lines ── */
