@@ -92,6 +92,8 @@ function ConversationScreen({
         setMicMuted(true);
         if (details.reason === "error") {
           setError(details.message);
+        } else if (details.reason === "agent" && details.closeReason) {
+          setError(details.closeReason);
         }
         if (openRef.current) {
           setStatus(endedRef.current ? "ended" : "idle");
@@ -162,6 +164,7 @@ function ConversationScreen({
     sawAssistantRef.current = false;
 
     startSession({
+      connectionType: "websocket",
       overrides: {
         agent: {
           prompt: {
@@ -374,6 +377,7 @@ export function Conversation(props: ConversationProps) {
   return (
     <ConversationProvider
       agentId={agentId}
+      connectionType="websocket"
       isMuted={micMuted}
       onMutedChange={setMicMuted}
     >
