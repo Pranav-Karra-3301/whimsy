@@ -94,6 +94,7 @@ export default async function ObjectPage({
           objectId={object.id}
           objectName={object.name}
           personality={object.personality}
+          backstory={object.backstory}
           voiceId={object.voice_id || ""}
           imageUrl={object.image_url}
         />
