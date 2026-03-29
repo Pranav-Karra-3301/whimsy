@@ -17,8 +17,6 @@ interface ConversationProps {
   objectName: string;
   personality: string;
   backstory: string;
-  voiceId: string;
-  imageUrl?: string;
 }
 
 interface Message {
@@ -72,8 +70,6 @@ function ConversationScreen({
   objectName,
   personality,
   backstory,
-  voiceId,
-  imageUrl,
   micMuted,
   setMicMuted,
 }: ConversationProps & {
@@ -87,12 +83,24 @@ function ConversationScreen({
 
   const openRef = useRef(false);
   const endedRef = useRef(false);
+  const contextSentRef = useRef(false);
   const countedRef = useRef(false);
   const sawUserRef = useRef(false);
   const sawAssistantRef = useRef(false);
 
-  const { startSession, endSession, status: sessionStatus, message, isSpeaking } =
-    useConversation({
+  const conversationContext = useMemo(
+    () => buildAgentPrompt({ objectName, personality, backstory }),
+    [backstory, objectName, personality]
+  );
+
+  const {
+    startSession,
+    endSession,
+    status: sessionStatus,
+    message,
+    isSpeaking,
+    sendContextualUpdate,
+  } = useConversation({
       onConnect: () => {
         setError("");
       },
@@ -146,6 +154,29 @@ function ConversationScreen({
   useEffect(() => { endedRef.current = status === "ended"; }, [status]);
 
   useEffect(() => {
+    if (!open || sessionStatus !== "connected" || contextSentRef.current) return;
+    try {
+      sendContextualUpdate(conversationContext);
+      contextSentRef.current = true;
+      setMicMuted(false);
+    } catch (nextError) {
+      setError(
+        nextError instanceof Error
+          ? nextError.message
+          : "Failed to initialize conversation context"
+      );
+      endSession();
+    }
+  }, [
+    conversationContext,
+    endSession,
+    open,
+    sendContextualUpdate,
+    sessionStatus,
+    setMicMuted,
+  ]);
+
+  useEffect(() => {
     if (status === "ended" || !open) return;
     if (sessionStatus === "connecting") { setStatus("connecting"); return; }
     if (sessionStatus === "error") { setStatus("idle"); return; }
@@ -163,25 +194,19 @@ function ConversationScreen({
   const openConversation = useCallback(() => {
     setMessages([]);
     setError("");
-    setMicMuted(false);
+    setMicMuted(true);
     setOpen(true);
     setStatus("connecting");
     endedRef.current = false;
+    contextSentRef.current = false;
     countedRef.current = false;
     sawUserRef.current = false;
     sawAssistantRef.current = false;
 
     startSession({
       connectionType: "websocket",
-      overrides: {
-        agent: {
-          prompt: {
-            prompt: buildAgentPrompt({ objectName, personality, backstory }),
-          },
-        },
-      },
     });
-  }, [backstory, objectName, personality, setMicMuted, startSession]);
+  }, [setMicMuted, startSession]);
 
   const toggleMicrophone = useCallback(() => {
     if (sessionStatus !== "connected") return;
