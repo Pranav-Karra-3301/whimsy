@@ -165,85 +165,127 @@ export function Conversation({
             : "Tap and hold to talk";
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0D0D0C] flex flex-col fade-in">
+    <div className="fixed inset-0 z-50 flex flex-col fade-in overflow-hidden">
+      {/* Background: blurred, dimmed photo */}
+      {imageUrl && (
+        <div className="absolute inset-0 z-0">
+          <img
+            src={imageUrl}
+            alt=""
+            className="w-full h-full object-cover scale-110 blur-[40px]"
+          />
+          <div className="absolute inset-0 bg-black/65" />
+          {/* Warm color wash for nostalgia */}
+          <div className="absolute inset-0 bg-gradient-to-b from-amber-900/10 via-transparent to-black/30" />
+        </div>
+      )}
+      {/* Fallback if no image */}
+      {!imageUrl && <div className="absolute inset-0 z-0 bg-[#0D0D0C]" />}
+
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4">
+      <div className="relative z-10 flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top),16px)] pb-3">
         {status === "ended" ? (
           <button
             onClick={close}
-            className="px-5 py-2 rounded-full bg-white text-[#0D0D0C] text-sm font-medium hover:bg-white/90 transition-colors"
+            className="px-5 py-2 rounded-full bg-white/90 backdrop-blur-sm text-[#1A1917] text-sm font-medium hover:bg-white transition-colors"
           >
             Done
           </button>
         ) : (
           <button
             onClick={endConversation}
-            className="px-5 py-2 rounded-full bg-white/10 text-white/70 text-sm font-medium hover:bg-white/15 transition-colors"
+            className="px-5 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/[0.06] text-white/70 text-sm font-medium hover:bg-white/15 transition-colors"
           >
             End
           </button>
         )}
-        <p className="text-sm text-white/40 font-medium">{statusLabel}</p>
+        <p className="text-[13px] text-white/40 font-medium tracking-wide">
+          {statusLabel}
+        </p>
         <div className="w-16" />
       </div>
 
-      {/* Character */}
-      <div className="flex-shrink-0 flex flex-col items-center pt-2 pb-4">
+      {/* Character — floating over the blurred background */}
+      <div className="relative z-10 flex-shrink-0 flex flex-col items-center pt-3 pb-3">
         {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={objectName}
-            className={`w-36 h-36 rounded-3xl object-cover shadow-elevated ring-1 ring-white/10 ${
-              status === "playing" ? "wobble-eyes" : ""
-            }`}
-          />
+          <div className="relative">
+            {/* Soft glow behind the image */}
+            <div
+              className="absolute -inset-3 rounded-[28px] opacity-40 blur-xl"
+              style={{
+                backgroundImage: `url(${imageUrl})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+            <img
+              src={imageUrl}
+              alt={objectName}
+              className={`relative w-28 h-28 rounded-2xl object-cover ring-1 ring-white/15 ${
+                status === "playing" ? "wobble-eyes" : ""
+              }`}
+            />
+          </div>
         ) : (
-          <div className="w-36 h-36 rounded-3xl bg-white/5 ring-1 ring-white/10 flex items-center justify-center text-4xl">
+          <div className="w-28 h-28 rounded-2xl bg-white/5 ring-1 ring-white/10 flex items-center justify-center text-3xl">
             📷
           </div>
         )}
-        <p className="text-center font-display text-xl text-white mt-3">
+        <p className="font-display text-lg text-white/90 mt-3">
           {objectName}
         </p>
+        {messages.length === 0 && status === "idle" && (
+          <p className="text-[12px] text-white/30 mt-1">
+            Hold the button below to start talking
+          </p>
+        )}
       </div>
 
       {/* Transcript */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-5 pb-4 space-y-3"
+        className="relative z-10 flex-1 overflow-y-auto px-4 pb-4 space-y-2.5"
       >
         {messages.map((msg, i) => (
           <div
             key={i}
-            className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-              msg.role === "assistant"
-                ? "bg-white/8 text-white/80 mr-auto"
-                : "bg-accent/20 text-white/80 ml-auto text-right"
+            className={`max-w-[80%] animate-[fade-in_0.25s_ease-out] ${
+              msg.role === "user" ? "ml-auto" : "mr-auto"
             }`}
           >
-            {msg.text}
+            <div
+              className={`px-[14px] py-[10px] text-[15px] leading-[1.45] ${
+                msg.role === "assistant"
+                  ? "bg-white/[0.12] backdrop-blur-md rounded-[18px] rounded-bl-[4px] text-white/85 border border-white/[0.06]"
+                  : "bg-white/90 rounded-[18px] rounded-br-[4px] text-[#1A1917]"
+              }`}
+            >
+              {msg.text}
+            </div>
           </div>
         ))}
         {status === "processing" && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/8 mr-auto max-w-[85%]">
-            <div className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" />
-            <div
-              className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse"
-              style={{ animationDelay: "0.2s" }}
-            />
-            <div
-              className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse"
-              style={{ animationDelay: "0.4s" }}
-            />
+          <div className="max-w-[80%] mr-auto">
+            <div className="inline-flex items-center gap-[5px] px-[14px] py-[12px] bg-white/[0.12] backdrop-blur-md rounded-[18px] rounded-bl-[4px] border border-white/[0.06]">
+              <div className="w-[6px] h-[6px] rounded-full bg-white/40 animate-bounce-dot" />
+              <div
+                className="w-[6px] h-[6px] rounded-full bg-white/40 animate-bounce-dot"
+                style={{ animationDelay: "0.16s" }}
+              />
+              <div
+                className="w-[6px] h-[6px] rounded-full bg-white/40 animate-bounce-dot"
+                style={{ animationDelay: "0.32s" }}
+              />
+            </div>
           </div>
         )}
       </div>
 
       {/* Push-to-talk */}
       {status !== "ended" && (
-        <div className="flex-shrink-0 px-4 pb-10 pt-2 flex flex-col items-center gap-3">
+        <div className="relative z-10 flex-shrink-0 px-4 pb-[max(env(safe-area-inset-bottom),32px)] pt-3 flex flex-col items-center gap-3">
           {error && (
-            <p className="text-sm text-red-400 text-center">{error}</p>
+            <p className="text-[13px] text-red-400/90 text-center">{error}</p>
           )}
           <button
             onTouchStart={startRecording}
@@ -251,15 +293,15 @@ export function Conversation({
             onMouseDown={startRecording}
             onMouseUp={stopRecording}
             disabled={status === "processing" || status === "playing"}
-            className={`w-[68px] h-[68px] rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-30 ${
+            className={`w-[64px] h-[64px] rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-30 ${
               status === "recording"
-                ? "bg-red-500 scale-110 text-white shadow-[0_0_24px_rgba(239,68,68,0.4)]"
-                : "bg-white text-[#0D0D0C] hover:bg-white/90 active:scale-110 active:bg-red-500 active:text-white"
+                ? "bg-red-500 scale-110 text-white shadow-[0_0_30px_rgba(239,68,68,0.35)]"
+                : "bg-white/90 backdrop-blur-sm text-[#1A1917] hover:bg-white active:scale-110 active:bg-red-500 active:text-white"
             }`}
           >
             <svg
-              width="24"
-              height="24"
+              width="22"
+              height="22"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -272,8 +314,17 @@ export function Conversation({
               <line x1="12" y1="19" x2="12" y2="22" />
             </svg>
           </button>
-          <p className="text-xs text-white/30">
+          <p className="text-[11px] text-white/25 tracking-wide">
             {status === "recording" ? "Release to send" : "Hold to talk"}
+          </p>
+        </div>
+      )}
+
+      {/* Ended state — fade out bottom area */}
+      {status === "ended" && (
+        <div className="relative z-10 flex-shrink-0 px-4 pb-[max(env(safe-area-inset-bottom),32px)] pt-6 flex flex-col items-center">
+          <p className="text-[13px] text-white/30 font-display">
+            Until next time
           </p>
         </div>
       )}
