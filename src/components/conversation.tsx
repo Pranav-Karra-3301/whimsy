@@ -165,216 +165,208 @@ export function Conversation({
             : "STANDBY";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 fade-in">
-      {/* Dark ambient background */}
-      <div className="absolute inset-0 bg-[#08080a]" />
+    <div className="fixed inset-0 z-50 bg-[var(--crt-bg)] overflow-hidden crt-flicker">
+      {/* ── CRT effect layers ── */}
 
-      {/* Blurred photo ambient light behind the monitor */}
+      {/* Blurred photo ambient glow */}
       {imageUrl && (
-        <div className="absolute inset-0 overflow-hidden">
-          <img
-            src={imageUrl}
-            alt=""
-            className="w-full h-full object-cover scale-125 blur-[80px] opacity-20"
-          />
-        </div>
+        <img
+          src={imageUrl}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover scale-125 blur-[80px] opacity-[0.07] pointer-events-none"
+        />
       )}
 
-      {/* CRT Monitor */}
-      <div className="relative z-10 crt-monitor w-full max-w-lg h-full max-h-[calc(100dvh-24px)] sm:max-h-[calc(100dvh-48px)] flex flex-col">
-        {/* Monitor top — brand label + LED */}
-        <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-2.5">
-          <span className="font-mono text-[10px] text-white/20 tracking-[0.2em] uppercase">
-            Whimsy CRT-V1
+      {/* Scanlines */}
+      <div className="crt-scanlines pointer-events-none" />
+
+      {/* Scan beam */}
+      <div className="crt-scanbeam" />
+
+      {/* Vignette + frame shadow (matches TerminalFrame shader) */}
+      <div className="crt-frame pointer-events-none" />
+
+      {/* Glass reflection */}
+      <div className="crt-reflection" />
+
+      {/* ── Screen content ── */}
+      <div className="relative z-10 flex flex-col h-full">
+        {/* Top status bar */}
+        <div
+          className="flex items-center justify-between px-5 sm:px-8 pb-2 border-b border-[var(--crt-green)]/10"
+          style={{ paddingTop: "max(env(safe-area-inset-top, 12px), 12px)" }}
+        >
+          <div className="flex items-center gap-3">
+            {status === "ended" ? (
+              <button
+                onClick={close}
+                className="font-mono text-xs crt-text hover:brightness-125 transition-all px-3 py-1.5 border border-[var(--crt-green)]/30 rounded"
+              >
+                [EXIT]
+              </button>
+            ) : (
+              <button
+                onClick={endConversation}
+                className="font-mono text-xs crt-text-dim hover:text-[var(--crt-green)] transition-colors px-3 py-1.5 border border-[var(--crt-green)]/15 rounded"
+              >
+                [END]
+              </button>
+            )}
+          </div>
+
+          <span
+            className={`font-mono text-[11px] tracking-wider ${
+              status === "recording"
+                ? "text-red-400 animate-pulse"
+                : "crt-text-dim"
+            }`}
+          >
+            {statusLabel}
           </span>
+
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[9px] text-[var(--crt-green-dim)] tracking-wider">
-              PWR
+            <span className="font-mono text-[9px] crt-text-dim tracking-wider hidden sm:inline">
+              WHIMSY
             </span>
-            <div
-              className={status === "ended" ? "crt-led-off" : "crt-led"}
-              style={{ width: 5, height: 5, borderRadius: "50%" }}
-            />
+            <div className={status === "ended" ? "crt-led-off" : "crt-led"} />
           </div>
         </div>
 
-        {/* CRT Screen */}
-        <div className="crt-screen flex-1 flex flex-col min-h-0 crt-flicker">
-          {/* Scanbeam sweep */}
-          <div className="crt-scanbeam" />
-          {/* Glass reflection */}
-          <div className="crt-reflection" />
-
-          {/* Screen content */}
-          <div className="relative z-10 flex flex-col h-full">
-            {/* Header bar */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--crt-green)]/10">
-              {status === "ended" ? (
-                <button
-                  onClick={close}
-                  className="font-mono text-xs crt-text hover:brightness-125 transition-all px-3 py-1.5 border border-[var(--crt-green)]/30 rounded"
-                >
-                  [EXIT]
-                </button>
-              ) : (
-                <button
-                  onClick={endConversation}
-                  className="font-mono text-xs crt-text-dim hover:text-[var(--crt-green)] transition-colors px-3 py-1.5 border border-[var(--crt-green)]/15 rounded"
-                >
-                  [END]
-                </button>
-              )}
-              <span
-                className={`font-mono text-[11px] tracking-wider ${
-                  status === "recording"
-                    ? "text-red-400 animate-pulse"
-                    : "crt-text-dim"
+        {/* Character display */}
+        <div className="flex-shrink-0 flex flex-col items-center py-5 sm:py-8 px-5">
+          {imageUrl ? (
+            <div className="relative">
+              <div className="absolute -inset-4 rounded-2xl bg-[var(--crt-green)]/[0.04] blur-2xl" />
+              <img
+                src={imageUrl}
+                alt={objectName}
+                className={`relative w-28 h-28 sm:w-36 sm:h-36 rounded-xl object-cover crt-image crt-rgb-shift border border-[var(--crt-green)]/20 ${
+                  status === "playing" ? "wobble-eyes" : ""
                 }`}
-              >
-                {statusLabel}
-              </span>
-              <span className="font-mono text-[10px] crt-text-dim">
-                CH-01
-              </span>
+              />
             </div>
-
-            {/* Character display */}
-            <div className="flex-shrink-0 flex flex-col items-center py-4 sm:py-5 px-4">
-              {imageUrl ? (
-                <div className="relative">
-                  {/* Glow behind image */}
-                  <div className="absolute -inset-2 rounded-xl bg-[var(--crt-green)]/5 blur-lg" />
-                  <img
-                    src={imageUrl}
-                    alt={objectName}
-                    className={`relative w-24 h-24 sm:w-28 sm:h-28 rounded-lg object-cover crt-image crt-rgb-shift border border-[var(--crt-green)]/20 ${
-                      status === "playing" ? "wobble-eyes" : ""
-                    }`}
-                  />
-                </div>
-              ) : (
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-lg border border-[var(--crt-green)]/20 flex items-center justify-center">
-                  <span className="crt-text font-mono text-2xl">?</span>
-                </div>
-              )}
-              <p className="crt-text font-mono text-sm mt-3 tracking-wide">
-                {objectName}
-              </p>
-              {messages.length === 0 && status === "idle" && (
-                <p className="crt-text-dim font-mono text-[10px] mt-1.5 tracking-wider">
-                  HOLD BUTTON TO TRANSMIT
-                </p>
-              )}
+          ) : (
+            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl border border-[var(--crt-green)]/20 flex items-center justify-center">
+              <span className="crt-text font-mono text-3xl">?</span>
             </div>
+          )}
+          <p className="crt-text font-mono text-sm sm:text-base mt-3 tracking-wide">
+            {objectName}
+          </p>
+          {messages.length === 0 && status === "idle" && (
+            <p className="crt-text-dim font-mono text-[10px] mt-1.5 tracking-wider">
+              HOLD BUTTON TO TRANSMIT
+            </p>
+          )}
+        </div>
 
-            {/* Separator */}
-            <div className="mx-4 border-t border-[var(--crt-green)]/10" />
+        {/* Separator */}
+        <div className="mx-5 sm:mx-8 border-t border-[var(--crt-green)]/10" />
 
-            {/* Messages */}
+        {/* Messages */}
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto px-5 sm:px-8 py-3 space-y-2.5 min-h-0"
+        >
+          {messages.map((msg, i) => (
             <div
-              ref={scrollRef}
-              className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5 min-h-0"
+              key={i}
+              className="font-mono text-[13px] sm:text-sm leading-[1.55]"
             >
-              {messages.map((msg, i) => (
-                <div key={i} className="font-mono text-[13px] leading-[1.5]">
-                  {msg.role === "assistant" ? (
-                    <div className="crt-text">
-                      <span className="crt-text-dim text-[11px]">
-                        {objectName.toUpperCase().slice(0, 8)}:{" "}
-                      </span>
-                      {msg.text}
-                    </div>
-                  ) : (
-                    <div className="crt-text-amber">
-                      <span className="text-[var(--crt-amber)]/60 text-[11px]">
-                        YOU:{" "}
-                      </span>
-                      {msg.text}
-                    </div>
-                  )}
-                </div>
-              ))}
-              {status === "processing" && (
-                <div className="flex items-center gap-[5px] font-mono crt-text">
+              {msg.role === "assistant" ? (
+                <div className="crt-text">
                   <span className="crt-text-dim text-[11px]">
                     {objectName.toUpperCase().slice(0, 8)}:{" "}
                   </span>
-                  <span className="inline-flex gap-[4px]">
-                    <span className="w-[5px] h-[5px] rounded-full bg-[var(--crt-green)] animate-bounce-dot" />
-                    <span
-                      className="w-[5px] h-[5px] rounded-full bg-[var(--crt-green)] animate-bounce-dot"
-                      style={{ animationDelay: "0.16s" }}
-                    />
-                    <span
-                      className="w-[5px] h-[5px] rounded-full bg-[var(--crt-green)] animate-bounce-dot"
-                      style={{ animationDelay: "0.32s" }}
-                    />
-                  </span>
+                  {msg.text}
+                </div>
+              ) : (
+                <div className="crt-text-amber">
+                  <span className="opacity-60 text-[11px]">YOU: </span>
+                  {msg.text}
                 </div>
               )}
             </div>
-
-            {/* Push-to-talk area */}
-            {status !== "ended" && (
-              <div className="flex-shrink-0 px-4 pb-4 sm:pb-5 pt-2 flex flex-col items-center gap-2 border-t border-[var(--crt-green)]/10">
-                {error && (
-                  <p className="font-mono text-[11px] text-red-400 text-center">
-                    ERR: {error}
-                  </p>
-                )}
-                <button
-                  onTouchStart={startRecording}
-                  onTouchEnd={stopRecording}
-                  onMouseDown={startRecording}
-                  onMouseUp={stopRecording}
-                  disabled={status === "processing" || status === "playing"}
-                  className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-20 border-2 ${
-                    status === "recording"
-                      ? "border-red-400 bg-red-400/10 text-red-400 scale-110 shadow-[0_0_20px_rgba(248,113,113,0.2)]"
-                      : "border-[var(--crt-green)]/40 bg-[var(--crt-green)]/5 crt-text hover:bg-[var(--crt-green)]/10 active:scale-110 active:border-red-400 active:text-red-400"
-                  }`}
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                    <line x1="12" y1="19" x2="12" y2="22" />
-                  </svg>
-                </button>
-                <p className="font-mono text-[10px] crt-text-dim tracking-wider">
-                  {status === "recording" ? "RELEASE TO SEND" : "HOLD TO TALK"}
-                </p>
-              </div>
-            )}
-
-            {/* Ended state */}
-            {status === "ended" && (
-              <div className="flex-shrink-0 px-4 pb-5 pt-4 flex flex-col items-center border-t border-[var(--crt-green)]/10">
-                <p className="font-mono text-[11px] crt-text-dim tracking-[0.3em]">
-                  — END TRANSMISSION —
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Monitor bottom — vent lines */}
-        <div className="flex items-center justify-center gap-[3px] px-6 py-2.5 sm:py-3">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div
-              key={i}
-              className="w-4 sm:w-5 h-[1.5px] rounded-full bg-white/[0.06]"
-            />
           ))}
+          {status === "processing" && (
+            <div className="flex items-center gap-[5px] font-mono crt-text">
+              <span className="crt-text-dim text-[11px]">
+                {objectName.toUpperCase().slice(0, 8)}:{" "}
+              </span>
+              <span className="inline-flex gap-[4px]">
+                <span className="w-[5px] h-[5px] rounded-full bg-[var(--crt-green)] animate-bounce-dot" />
+                <span
+                  className="w-[5px] h-[5px] rounded-full bg-[var(--crt-green)] animate-bounce-dot"
+                  style={{ animationDelay: "0.16s" }}
+                />
+                <span
+                  className="w-[5px] h-[5px] rounded-full bg-[var(--crt-green)] animate-bounce-dot"
+                  style={{ animationDelay: "0.32s" }}
+                />
+              </span>
+            </div>
+          )}
         </div>
+
+        {/* Push-to-talk */}
+        {status !== "ended" && (
+          <div
+            className="flex-shrink-0 px-5 sm:px-8 pt-3 flex flex-col items-center gap-2 border-t border-[var(--crt-green)]/10"
+            style={{
+              paddingBottom: "max(env(safe-area-inset-bottom, 20px), 20px)",
+            }}
+          >
+            {error && (
+              <p className="font-mono text-[11px] text-red-400 text-center">
+                ERR: {error}
+              </p>
+            )}
+            <button
+              onTouchStart={startRecording}
+              onTouchEnd={stopRecording}
+              onMouseDown={startRecording}
+              onMouseUp={stopRecording}
+              disabled={status === "processing" || status === "playing"}
+              className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-20 border-2 ${
+                status === "recording"
+                  ? "border-red-400 bg-red-400/10 text-red-400 scale-110 shadow-[0_0_24px_rgba(248,113,113,0.25)]"
+                  : "border-[var(--crt-green)]/40 bg-[var(--crt-green)]/5 crt-text hover:bg-[var(--crt-green)]/10 active:scale-110 active:border-red-400 active:text-red-400"
+              }`}
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+              </svg>
+            </button>
+            <p className="font-mono text-[10px] crt-text-dim tracking-wider">
+              {status === "recording" ? "RELEASE TO SEND" : "HOLD TO TALK"}
+            </p>
+          </div>
+        )}
+
+        {/* Ended state */}
+        {status === "ended" && (
+          <div
+            className="flex-shrink-0 px-5 pt-5 flex flex-col items-center border-t border-[var(--crt-green)]/10"
+            style={{
+              paddingBottom: "max(env(safe-area-inset-bottom, 24px), 24px)",
+            }}
+          >
+            <p className="font-mono text-[11px] crt-text-dim tracking-[0.3em]">
+              — END TRANSMISSION —
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

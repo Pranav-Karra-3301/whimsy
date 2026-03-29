@@ -54,72 +54,48 @@ img {
    CSS-only implementation for mobile compat
    ============================================ */
 
-/* Monitor bezel — the outer CRT body */
-.crt-monitor {
-  background: var(--crt-bezel);
-  border-radius: 20px;
-  padding: 12px;
-  box-shadow:
-    0 0 0 2px #222220,
-    0 0 0 4px #0f0f0e,
-    0 8px 40px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
+/*
+ * Full-viewport CRT layers
+ * Matches TerminalFrame shader from cool-retro-term-renderer:
+ *   - Scanlines as repeating gradient
+ *   - Vignette via radial gradient (pow(prod2(coords) * 15, 0.25))
+ *   - Frame shadow via heavy edge darkening
+ *   - Screen shadow via inner glow
+ */
 
-@media (min-width: 640px) {
-  .crt-monitor {
-    border-radius: 28px;
-    padding: 16px;
-  }
-}
-
-/* The glass screen inside the bezel */
-.crt-screen {
-  position: relative;
-  overflow: hidden;
-  border-radius: 12px;
-  background: var(--crt-bg);
-}
-
-@media (min-width: 640px) {
-  .crt-screen {
-    border-radius: 16px;
-  }
-}
-
-/* Scanlines — repeating 2px horizontal lines */
-.crt-screen::before {
-  content: "";
-  position: absolute;
+/* Scanlines — fixed full-viewport overlay */
+.crt-scanlines {
+  position: fixed;
   inset: 0;
-  z-index: 20;
-  pointer-events: none;
+  z-index: 30;
   background: repeating-linear-gradient(
     0deg,
-    rgba(0, 0, 0, 0.12) 0px,
-    rgba(0, 0, 0, 0.12) 1px,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
     transparent 1px,
-    transparent 2px
+    transparent 3px
   );
-  mix-blend-mode: multiply;
 }
 
-/* Vignette + curvature glow on the screen */
-.crt-screen::after {
-  content: "";
-  position: absolute;
+/* Frame + vignette — matches TerminalFrame's combined shadow effect */
+.crt-frame {
+  position: fixed;
   inset: 0;
-  z-index: 21;
-  pointer-events: none;
-  border-radius: inherit;
+  z-index: 31;
+  /* Heavy vignette: transparent center → solid black edges */
   background: radial-gradient(
-    ellipse at center,
-    transparent 50%,
-    rgba(0, 0, 0, 0.45) 100%
+    ellipse 80% 80% at 50% 50%,
+    transparent 0%,
+    transparent 45%,
+    rgba(0, 0, 0, 0.15) 60%,
+    rgba(0, 0, 0, 0.5) 75%,
+    rgba(0, 0, 0, 0.85) 90%,
+    rgba(0, 0, 0, 1) 100%
   );
+  /* Screen curvature illusion: inset glow simulates curved glass */
   box-shadow:
-    inset 0 0 60px rgba(0, 0, 0, 0.3),
-    inset 0 0 120px rgba(0, 0, 0, 0.15);
+    inset 0 0 80px rgba(0, 0, 0, 0.4),
+    inset 0 0 200px rgba(0, 0, 0, 0.25);
 }
 
 /* Flicker animation — subtle brightness oscillation */
@@ -138,25 +114,25 @@ img {
   animation: crt-flicker 4s ease-in-out infinite;
 }
 
-/* Glowing scan beam — a bright line that sweeps down */
+/* Glowing scan beam — a bright line that sweeps down the full screen */
 @keyframes crt-scanbeam {
   0% { top: -6%; }
   100% { top: 106%; }
 }
 
 .crt-scanbeam {
-  position: absolute;
+  position: fixed;
   left: 0;
   right: 0;
   height: 6%;
-  z-index: 19;
+  z-index: 29;
   pointer-events: none;
   background: linear-gradient(
     to bottom,
     transparent,
-    rgba(51, 255, 102, 0.04),
+    rgba(51, 255, 102, 0.03),
     rgba(51, 255, 102, 0.06),
-    rgba(51, 255, 102, 0.04),
+    rgba(51, 255, 102, 0.03),
     transparent
   );
   animation: crt-scanbeam 8s linear infinite;
@@ -189,18 +165,17 @@ img {
     drop-shadow(-1px 0 0 rgba(0, 100, 255, 0.15));
 }
 
-/* Screen reflection — a subtle highlight across the glass */
+/* Screen reflection — subtle glass highlight across full screen */
 .crt-reflection {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 22;
+  z-index: 32;
   pointer-events: none;
-  border-radius: inherit;
   background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.03) 0%,
-    transparent 40%,
-    transparent 60%,
+    145deg,
+    rgba(255, 255, 255, 0.025) 0%,
+    transparent 35%,
+    transparent 65%,
     rgba(255, 255, 255, 0.01) 100%
   );
 }
