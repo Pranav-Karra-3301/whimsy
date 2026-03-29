@@ -29,9 +29,6 @@ interface Message {
 
 type Status = "idle" | "connecting" | "recording" | "processing" | "playing" | "ended";
 
-// ElevenLabs "Rachel" — reliable default when no voice is assigned
-const DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
-
 function buildAgentPrompt({
   objectName,
   personality,
@@ -182,10 +179,9 @@ function ConversationScreen({
             prompt: buildAgentPrompt({ objectName, personality, backstory }),
           },
         },
-        tts: { voiceId: voiceId || DEFAULT_VOICE_ID },
       },
     });
-  }, [backstory, objectName, personality, setMicMuted, startSession, voiceId]);
+  }, [backstory, objectName, personality, setMicMuted, startSession]);
 
   const toggleMicrophone = useCallback(() => {
     if (sessionStatus !== "connected") return;
