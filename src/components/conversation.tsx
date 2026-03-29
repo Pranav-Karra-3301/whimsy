@@ -176,16 +176,11 @@ function ConversationScreen({
     });
   }, [backstory, objectName, personality, setMicMuted, startSession, voiceId]);
 
-  const handlePressStart = useCallback(() => {
+  const togglePushToTalk = useCallback(() => {
     if (sessionStatus !== "connected") return;
     setError("");
-    setMicMuted(false);
-  }, [sessionStatus, setMicMuted]);
-
-  const handlePressEnd = useCallback(() => {
-    if (sessionStatus !== "connected") return;
-    setMicMuted(true);
-  }, [sessionStatus, setMicMuted]);
+    setMicMuted(!micMuted);
+  }, [micMuted, sessionStatus, setMicMuted]);
 
   const endConversation = useCallback(() => {
     persistTalkCount();
@@ -223,10 +218,6 @@ function ConversationScreen({
     lines.push("");
     lines.push(`  ${tag}`);
     lines.push("");
-
-    if (messages.length === 0 && (status === "idle" || status === "connecting")) {
-      lines.push(status === "connecting" ? "  Connecting to agent..." : "  Hold button to transmit...");
-    }
 
     for (const msg of messages) {
       const prefix = msg.role === "assistant" ? `  ${tag}: ` : "  YOU: ";
@@ -303,10 +294,7 @@ function ConversationScreen({
               </p>
             )}
             <button
-              onPointerDown={handlePressStart}
-              onPointerUp={handlePressEnd}
-              onPointerCancel={handlePressEnd}
-              onPointerLeave={handlePressEnd}
+              onClick={togglePushToTalk}
               disabled={sessionStatus !== "connected"}
               className={`pointer-events-auto w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-20 border-2 ${
                 status === "recording"
@@ -329,13 +317,6 @@ function ConversationScreen({
                 <line x1="12" y1="19" x2="12" y2="22" />
               </svg>
             </button>
-            <p className="font-mono text-[10px] text-[#0a7a3e] tracking-wider">
-              {status === "connecting"
-                ? "CONNECTING..."
-                : status === "recording"
-                  ? "RELEASE TO SEND"
-                  : "HOLD TO TALK"}
-            </p>
           </div>
         )}
 
