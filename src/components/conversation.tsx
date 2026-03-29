@@ -2,6 +2,7 @@
 
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CRTScreen } from "./crt-screen";
 
 interface ConversationProps {
   objectId: string;
@@ -40,6 +41,24 @@ function buildAgentPrompt({
     .join("\n\n");
 }
 
+/** Simple word-wrap */
+function wordWrap(text: string, maxWidth: number): string[] {
+  if (text.length <= maxWidth) return [text];
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    if (current.length + word.length + 1 > maxWidth && current.length > 0) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = current ? current + " " + word : word;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
 function ConversationScreen({
   objectId,
   objectName,
@@ -58,7 +77,6 @@ function ConversationScreen({
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState("");
 
-  const scrollRef = useRef<HTMLDivElement>(null);
   const openRef = useRef(false);
   const endedRef = useRef(false);
   const countedRef = useRef(false);
@@ -75,7 +93,6 @@ function ConversationScreen({
         if (details.reason === "error") {
           setError(details.message);
         }
-
         if (openRef.current) {
           setStatus(endedRef.current ? "ended" : "idle");
         }
@@ -85,16 +102,10 @@ function ConversationScreen({
       },
       onMessage: ({ role, message: nextMessage, event_id }) => {
         const text = nextMessage.trim();
+        if (!text) return;
 
-        if (!text) {
-          return;
-        }
-
-        if (role === "user") {
-          sawUserRef.current = true;
-        } else {
-          sawAssistantRef.current = true;
-        }
+        if (role === "user") sawUserRef.current = true;
+        else sawAssistantRef.current = true;
 
         setMessages((prev) => [
           ...prev,
@@ -111,10 +122,8 @@ function ConversationScreen({
     });
 
   const persistTalkCount = useCallback(() => {
-    if (!objectId || countedRef.current || !sawUserRef.current || !sawAssistantRef.current) {
+    if (!objectId || countedRef.current || !sawUserRef.current || !sawAssistantRef.current)
       return;
-    }
-
     countedRef.current = true;
     void fetch(`/api/objects/${objectId}`, {
       method: "PUT",
@@ -123,69 +132,25 @@ function ConversationScreen({
     });
   }, [objectId]);
 
-  useEffect(() => {
-    openRef.current = open;
-  }, [open]);
+  useEffect(() => { openRef.current = open; }, [open]);
+  useEffect(() => { endedRef.current = status === "ended"; }, [status]);
 
   useEffect(() => {
-    endedRef.current = status === "ended";
-  }, [status]);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  }, [messages]);
-
-  useEffect(() => {
-    if (endedRef.current || !open) {
-      return;
-    }
-
-    if (sessionStatus === "connecting") {
-      setStatus("connecting");
-      return;
-    }
-
-    if (sessionStatus === "error") {
-      setStatus("idle");
-      return;
-    }
-
-    if (sessionStatus !== "connected") {
-      setStatus("idle");
-      return;
-    }
-
-    if (!micMuted) {
-      setStatus("recording");
-      return;
-    }
-
-    if (isSpeaking) {
-      setStatus("playing");
-      return;
-    }
-
-    if (messages[messages.length - 1]?.role === "user") {
-      setStatus("processing");
-      return;
-    }
-
+    if (status === "ended" || !open) return;
+    if (sessionStatus === "connecting") { setStatus("connecting"); return; }
+    if (sessionStatus === "error") { setStatus("idle"); return; }
+    if (sessionStatus !== "connected") { setStatus("idle"); return; }
+    if (!micMuted) { setStatus("recording"); return; }
+    if (isSpeaking) { setStatus("playing"); return; }
+    if (messages[messages.length - 1]?.role === "user") { setStatus("processing"); return; }
     setStatus("idle");
-  }, [isSpeaking, messages, micMuted, open, sessionStatus]);
+  }, [isSpeaking, messages, micMuted, open, sessionStatus, status]);
 
   useEffect(() => {
-    if (sessionStatus === "error" && message) {
-      setError(message);
-    }
+    if (sessionStatus === "error" && message) setError(message);
   }, [message, sessionStatus]);
 
   const openConversation = useCallback(() => {
-    openRef.current = true;
     setMessages([]);
     setError("");
     setMicMuted(true);
@@ -203,31 +168,19 @@ function ConversationScreen({
             prompt: buildAgentPrompt({ objectName, personality, backstory }),
           },
         },
-        ...(voiceId
-          ? {
-              tts: {
-                voiceId,
-              },
-            }
-          : {}),
+        ...(voiceId ? { tts: { voiceId } } : {}),
       },
     });
   }, [backstory, objectName, personality, setMicMuted, startSession, voiceId]);
 
   const handlePressStart = useCallback(() => {
-    if (sessionStatus !== "connected") {
-      return;
-    }
-
+    if (sessionStatus !== "connected") return;
     setError("");
     setMicMuted(false);
   }, [sessionStatus, setMicMuted]);
 
   const handlePressEnd = useCallback(() => {
-    if (sessionStatus !== "connected") {
-      return;
-    }
-
+    if (sessionStatus !== "connected") return;
     setMicMuted(true);
   }, [sessionStatus, setMicMuted]);
 
@@ -241,7 +194,6 @@ function ConversationScreen({
 
   const close = useCallback(() => {
     persistTalkCount();
-    openRef.current = false;
     setMicMuted(true);
     endedRef.current = false;
     setOpen(false);
@@ -251,14 +203,53 @@ function ConversationScreen({
     endSession();
   }, [endSession, persistTalkCount, setMicMuted]);
 
-  const statusLabel = useMemo(() => {
-    if (status === "recording") return "REC ●";
-    if (status === "connecting") return "CONNECTING...";
-    if (status === "processing") return "PROCESSING...";
-    if (status === "playing") return "PLAYING...";
-    if (status === "ended") return "SIGNAL LOST";
-    return "STANDBY";
-  }, [status]);
+  // Build terminal text for the CRT renderer
+  const terminalText = useMemo(() => {
+    const tag = objectName.toUpperCase().slice(0, 10);
+    const statusStr =
+      status === "recording" ? "REC *"
+      : status === "connecting" ? "CONNECTING..."
+      : status === "processing" ? "PROCESSING..."
+      : status === "playing" ? "PLAYING..."
+      : status === "ended" ? "SIGNAL LOST"
+      : "STANDBY";
+
+    const lines: string[] = [];
+    lines.push("");
+    lines.push(`  WHIMSY CRT-V1                         ${statusStr}`);
+    lines.push("");
+    lines.push(`  ${tag}`);
+    lines.push("");
+
+    if (messages.length === 0 && (status === "idle" || status === "connecting")) {
+      lines.push(status === "connecting" ? "  Connecting to agent..." : "  Hold button to transmit...");
+    }
+
+    for (const msg of messages) {
+      const prefix = msg.role === "assistant" ? `  ${tag}: ` : "  YOU: ";
+      const wrapped = wordWrap(msg.text, 68 - prefix.length);
+      lines.push(prefix + wrapped[0]);
+      for (let i = 1; i < wrapped.length; i++) {
+        lines.push(" ".repeat(prefix.length) + wrapped[i]);
+      }
+      lines.push("");
+    }
+
+    if (status === "processing") {
+      lines.push(`  ${tag}: ...`);
+    }
+
+    if (error) {
+      lines.push(`  ERR: ${error}`);
+    }
+
+    if (status === "ended") {
+      lines.push("");
+      lines.push("  -- END TRANSMISSION --");
+    }
+
+    return lines.join("\n");
+  }, [messages, status, objectName, error]);
 
   if (!open) {
     return (
@@ -272,133 +263,40 @@ function ConversationScreen({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[var(--crt-screen)] overflow-hidden crt-flicker">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(12,204,104,0.06),transparent_70%)] pointer-events-none" />
-      <div className="crt-scanlines" />
-      <div className="crt-scanbeam" />
-      <div className="crt-vignette" />
-      <div className="crt-reflection" />
-      <div className="crt-bezel" />
+    <div className="fixed inset-0 z-50 overflow-hidden">
+      {/* Full-screen WebGL CRT canvas */}
+      <CRTScreen text={terminalText} />
 
-      <div className="relative z-10 flex flex-col h-full">
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3">
-          <div className="flex items-center gap-3">
-            {status === "ended" ? (
-              <button
-                onClick={close}
-                className="font-mono text-xs crt-text hover:brightness-125 transition-all"
-              >
-                [EXIT]
-              </button>
-            ) : (
-              <button
-                onClick={endConversation}
-                className="font-mono text-xs crt-text-dim hover:text-[var(--crt-green)] transition-colors"
-              >
-                [END]
-              </button>
-            )}
-          </div>
-
-          <span
-            className={`font-mono text-[11px] tracking-wider ${
-              status === "recording"
-                ? "text-red-400 animate-pulse"
-                : "crt-text-dim"
-            }`}
-          >
-            {statusLabel}
-          </span>
-
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[9px] crt-text-dim tracking-wider hidden sm:inline">
-              WHIMSY
-            </span>
-            <div className={status === "ended" ? "crt-led-off" : "crt-led"} />
-          </div>
-        </div>
-
-        <div className="flex-shrink-0 flex flex-col items-center py-4 sm:py-6 px-4">
-          {imageUrl ? (
-            <div className="relative">
-              <div className="absolute -inset-4 rounded-2xl bg-[var(--crt-green)]/[0.04] blur-2xl" />
-              <img
-                src={imageUrl}
-                alt={objectName}
-                className={`relative w-28 h-28 sm:w-36 sm:h-36 rounded-xl object-cover crt-image crt-rgb-shift ${
-                  status === "playing" ? "wobble-eyes" : ""
-                }`}
-              />
-            </div>
-          ) : (
-            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl bg-[var(--crt-green)]/[0.03] flex items-center justify-center">
-              <span className="crt-text font-mono text-3xl">?</span>
-            </div>
-          )}
-          <p className="crt-text font-mono text-sm sm:text-base mt-3 tracking-wide">
-            {objectName}
-          </p>
-          {messages.length === 0 && status === "idle" && (
-            <p className="crt-text-dim font-mono text-[10px] mt-1.5 tracking-wider">
-              HOLD BUTTON TO TRANSMIT
-            </p>
-          )}
-        </div>
-
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto px-4 sm:px-6 py-2 space-y-2.5 min-h-0"
-        >
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className="font-mono text-[13px] sm:text-sm leading-[1.55]"
+      {/* Interactive overlay on top of WebGL */}
+      <div className="absolute inset-0 z-10 flex flex-col pointer-events-none">
+        {/* Top — end/exit button */}
+        <div className="flex items-center px-8 sm:px-12 pt-8 sm:pt-10">
+          {status === "ended" ? (
+            <button
+              onClick={close}
+              className="pointer-events-auto font-mono text-xs text-[#0ccc68]/60 hover:text-[#0ccc68] transition-colors cursor-pointer px-3 py-1.5"
             >
-              {msg.role === "assistant" ? (
-                <div className="crt-text">
-                  <span className="crt-text-dim text-[11px]">
-                    {objectName.toUpperCase().slice(0, 8)}:{" "}
-                  </span>
-                  {msg.text}
-                </div>
-              ) : (
-                <div className="crt-text-amber">
-                  <span className="opacity-60 text-[11px]">YOU: </span>
-                  {msg.text}
-                </div>
-              )}
-            </div>
-          ))}
-          {status === "connecting" && (
-            <div className="font-mono crt-text-dim text-[11px]">
-              CONNECTING TO AGENT...
-            </div>
-          )}
-          {status === "processing" && (
-            <div className="flex items-center gap-[5px] font-mono crt-text">
-              <span className="crt-text-dim text-[11px]">
-                {objectName.toUpperCase().slice(0, 8)}:{" "}
-              </span>
-              <span className="inline-flex gap-[4px]">
-                <span className="w-[5px] h-[5px] rounded-full bg-[var(--crt-green)] animate-bounce-dot" />
-                <span
-                  className="w-[5px] h-[5px] rounded-full bg-[var(--crt-green)] animate-bounce-dot"
-                  style={{ animationDelay: "0.16s" }}
-                />
-                <span
-                  className="w-[5px] h-[5px] rounded-full bg-[var(--crt-green)] animate-bounce-dot"
-                  style={{ animationDelay: "0.32s" }}
-                />
-              </span>
-            </div>
+              [EXIT]
+            </button>
+          ) : (
+            <button
+              onClick={endConversation}
+              className="pointer-events-auto font-mono text-xs text-[#0a7a3e] hover:text-[#0ccc68] transition-colors cursor-pointer px-3 py-1.5"
+            >
+              [END]
+            </button>
           )}
         </div>
 
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Bottom — push-to-talk */}
         {status !== "ended" && (
-          <div className="flex-shrink-0 px-4 sm:px-6 pt-3 pb-4 flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-3 pb-10 sm:pb-14">
             {error && (
-              <p className="font-mono text-[11px] text-red-400 text-center">
-                ERR: {error}
+              <p className="font-mono text-[11px] text-red-400 text-center pointer-events-auto">
+                {error}
               </p>
             )}
             <button
@@ -407,10 +305,10 @@ function ConversationScreen({
               onPointerCancel={handlePressEnd}
               onPointerLeave={handlePressEnd}
               disabled={sessionStatus !== "connected"}
-              className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-20 border-2 ${
+              className={`pointer-events-auto w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-20 border-2 ${
                 status === "recording"
                   ? "border-red-400 bg-red-400/10 text-red-400 scale-110 shadow-[0_0_24px_rgba(248,113,113,0.25)]"
-                  : "border-[var(--crt-green)]/40 bg-[var(--crt-green)]/5 crt-text hover:bg-[var(--crt-green)]/10 active:scale-110 active:border-red-400 active:text-red-400"
+                  : "border-[#0ccc68]/40 bg-[#0ccc68]/5 text-[#0ccc68] hover:bg-[#0ccc68]/10 active:scale-110 active:border-red-400 active:text-red-400"
               }`}
             >
               <svg
@@ -428,7 +326,7 @@ function ConversationScreen({
                 <line x1="12" y1="19" x2="12" y2="22" />
               </svg>
             </button>
-            <p className="font-mono text-[10px] crt-text-dim tracking-wider">
+            <p className="font-mono text-[10px] text-[#0a7a3e] tracking-wider">
               {status === "connecting"
                 ? "CONNECTING..."
                 : status === "recording"
@@ -439,10 +337,13 @@ function ConversationScreen({
         )}
 
         {status === "ended" && (
-          <div className="flex-shrink-0 px-4 pt-5 pb-4 flex flex-col items-center">
-            <p className="font-mono text-[11px] crt-text-dim tracking-[0.3em]">
-              — END TRANSMISSION —
-            </p>
+          <div className="flex flex-col items-center pb-12">
+            <button
+              onClick={close}
+              className="pointer-events-auto font-mono text-sm text-[#0ccc68] px-6 py-2 border border-[#0ccc68]/30 rounded hover:bg-[#0ccc68]/10 transition-colors cursor-pointer"
+            >
+              Done
+            </button>
           </div>
         )}
       </div>
@@ -464,7 +365,7 @@ export function Conversation(props: ConversationProps) {
           Talk to {props.objectName}
         </button>
         <p className="text-xs text-red-500 text-center">
-          Missing `NEXT_PUBLIC_ELEVENLABS_AGENT_ID`.
+          Missing NEXT_PUBLIC_ELEVENLABS_AGENT_ID
         </p>
       </div>
     );
