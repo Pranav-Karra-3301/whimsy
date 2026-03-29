@@ -38,12 +38,12 @@ export function ImageUpload({ onCapture, disabled }: ImageUploadProps) {
         <img
           src={preview}
           alt="Selected photo"
-          className="w-full aspect-[4/3] object-cover rounded-2xl"
+          className="w-full aspect-[4/3] object-cover rounded-3xl"
         />
         {!disabled && (
           <button
             onClick={reset}
-            className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-sm text-sm shadow-sm hover:bg-white transition-colors"
+            className="absolute top-3 right-3 px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-md text-sm font-medium shadow-sm hover:bg-white transition-colors"
           >
             Change
           </button>
@@ -54,9 +54,9 @@ export function ImageUpload({ onCapture, disabled }: ImageUploadProps) {
 
   return (
     <div className="space-y-3 fade-in">
-      <label className="block w-full py-12 rounded-2xl bg-surface border border-border shadow-sm hover:bg-surface-hover transition-all text-center cursor-pointer">
-        <div className="text-3xl mb-2">📷</div>
-        <span className="text-sm text-muted">Take a photo</span>
+      <label className="block w-full py-16 rounded-3xl bg-surface border border-border-subtle shadow-card hover:shadow-card-hover hover:bg-surface-hover transition-all duration-200 text-center cursor-pointer">
+        <div className="text-4xl mb-3">📷</div>
+        <span className="text-sm text-muted font-medium">Take a photo</span>
         <input
           type="file"
           accept="image/*"
@@ -66,7 +66,7 @@ export function ImageUpload({ onCapture, disabled }: ImageUploadProps) {
           disabled={disabled}
         />
       </label>
-      <label className="block w-full py-4 rounded-2xl bg-surface border border-dashed border-border shadow-sm hover:bg-surface-hover transition-all text-center cursor-pointer text-sm text-muted">
+      <label className="block w-full py-5 rounded-2xl bg-surface border border-dashed border-border shadow-card hover:bg-surface-hover transition-all duration-200 text-center cursor-pointer text-sm text-muted font-medium">
         Upload from gallery
         <input
           type="file"

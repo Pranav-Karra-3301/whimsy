@@ -61,10 +61,13 @@ function rowToObject(row: unknown[]): NPCObject {
 }
 
 export async function getAllObjects(): Promise<NPCObject[]> {
-  const rows = await stdbSQL(
-    "SELECT * FROM npc_object ORDER BY created_at DESC"
-  );
-  return rows.map(rowToObject);
+  const rows = await stdbSQL("SELECT * FROM npc_object");
+  return rows
+    .map(rowToObject)
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
 }
 
 export async function getObjectById(

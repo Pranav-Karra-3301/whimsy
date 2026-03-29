@@ -59,7 +59,7 @@ SpaceTimeDB (maincloud) with `npc_object` table. `src/lib/db.ts` wraps the HTTP 
 
 ## Design System
 
-Dark background (`#0a0a0a`) with white card surfaces and golden accent (`#e8c872`). Clean rounded corners (2xl/3xl). Colors defined via CSS variables in `globals.css` and referenced in `tailwind.config.ts`. Fonts: Geist Sans + Geist Mono.
+Apple/Anthropic-inspired clean aesthetic. Warm neutral background (`#F8F8F7`) with pure white card surfaces, subtle shadows (no harsh borders), and Apple's near-black text (`#1D1D1F`). Accent color: warm terracotta (`#D4775C`) used sparingly. Colors defined via CSS variables in `globals.css` and referenced in `tailwind.config.ts`. Typography: Geist Sans + Geist Mono with `-0.02em` letter-spacing on headings. Components use `rounded-full` buttons, `rounded-3xl`/`rounded-4xl` cards, and generous padding. Max content width: `max-w-2xl`.
 
 ## Environment Variables
 

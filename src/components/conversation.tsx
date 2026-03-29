@@ -146,7 +146,7 @@ export function Conversation({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full py-3.5 rounded-2xl bg-primary text-white font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-all shadow-sm"
+        className="w-full py-4 rounded-full bg-primary text-white font-medium text-sm tracking-apple hover:bg-primary-hover active:scale-[0.98] transition-all shadow-card"
       >
         Talk to {objectName}
       </button>
@@ -167,18 +167,18 @@ export function Conversation({
   return (
     <div className="fixed inset-0 z-50 bg-bg flex flex-col fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center justify-between px-5 py-3">
         {status === "ended" ? (
           <button
             onClick={close}
-            className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 transition-colors"
+            className="px-5 py-2 rounded-full bg-primary text-white text-sm font-medium tracking-apple hover:bg-primary-hover transition-colors"
           >
             Done
           </button>
         ) : (
           <button
             onClick={endConversation}
-            className="px-4 py-2 rounded-xl bg-surface border border-border text-sm hover:bg-surface-hover transition-colors shadow-sm"
+            className="px-5 py-2 rounded-full bg-surface border border-border-subtle text-sm font-medium hover:bg-surface-hover transition-colors shadow-card"
           >
             End
           </button>
@@ -193,37 +193,39 @@ export function Conversation({
           <img
             src={imageUrl}
             alt={objectName}
-            className={`w-44 h-44 rounded-3xl object-cover shadow-lg ${
+            className={`w-40 h-40 rounded-4xl object-cover shadow-elevated ${
               status === "playing" ? "wobble-eyes" : ""
             }`}
           />
         ) : (
-          <div className="w-44 h-44 rounded-3xl bg-surface-hover border border-border flex items-center justify-center text-5xl">
+          <div className="w-40 h-40 rounded-4xl bg-surface-hover border border-border-subtle flex items-center justify-center text-5xl">
             📷
           </div>
         )}
       </div>
-      <p className="text-center text-lg font-bold pb-3">{objectName}</p>
+      <p className="text-center text-lg font-semibold tracking-apple pb-3">
+        {objectName}
+      </p>
 
       {/* Transcript */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 pb-4 space-y-3"
+        className="flex-1 overflow-y-auto px-5 pb-4 space-y-3"
       >
         {messages.map((msg, i) => (
           <div
             key={i}
-            className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+            className={`max-w-[85%] px-4 py-3 rounded-3xl text-sm leading-relaxed ${
               msg.role === "assistant"
-                ? "bg-surface border border-border shadow-sm mr-auto"
-                : "bg-primary-light ml-auto text-right"
+                ? "bg-surface shadow-card mr-auto"
+                : "bg-accent-light ml-auto text-right"
             }`}
           >
             {msg.text}
           </div>
         ))}
         {status === "processing" && (
-          <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-surface border border-border shadow-sm mr-auto max-w-[85%]">
+          <div className="flex items-center gap-2 px-4 py-3 rounded-3xl bg-surface shadow-card mr-auto max-w-[85%]">
             <div className="w-1.5 h-1.5 rounded-full bg-muted animate-pulse" />
             <div
               className="w-1.5 h-1.5 rounded-full bg-muted animate-pulse"
@@ -249,10 +251,10 @@ export function Conversation({
             onMouseDown={startRecording}
             onMouseUp={stopRecording}
             disabled={status === "processing" || status === "playing"}
-            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-lg disabled:opacity-40 ${
+            className={`w-[72px] h-[72px] rounded-full flex items-center justify-center transition-all shadow-elevated disabled:opacity-40 ${
               status === "recording"
                 ? "bg-red-500 scale-110 text-white"
-                : "bg-primary text-white hover:opacity-90 active:scale-110 active:bg-red-500"
+                : "bg-primary text-white hover:bg-primary-hover active:scale-110 active:bg-red-500"
             }`}
           >
             <svg

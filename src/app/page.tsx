@@ -26,7 +26,6 @@ export default function Home() {
       );
 
       try {
-        // Parallel: identify + process image + pick voice
         const [identifyRes, imageRes, voicesRes] = await Promise.all([
           fetch("/api/identify", {
             method: "POST",
@@ -50,14 +49,12 @@ export default function Home() {
           ? await voicesRes.json()
           : { voices: [] };
 
-        // Pick random voice
         const voices = voicesData.voices ?? [];
         const pick =
           voices.length > 0
             ? voices[Math.floor(Math.random() * voices.length)]
             : null;
 
-        // Auto-save
         setStep("saving");
         setStatusText(`Saving "${identity.name}"...`);
 
@@ -95,45 +92,47 @@ export default function Home() {
   );
 
   return (
-    <div className="pt-8 space-y-6">
+    <div className="pt-12 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">
+        <h1 className="text-3xl font-semibold tracking-apple">
           Talk to a picture
         </h1>
-        <p className="text-sm text-muted mt-1">
+        <p className="text-base text-muted mt-2">
           Upload any photo, painting, or memory and start a conversation.
         </p>
       </div>
 
       {/* Mode selector */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         <button
           onClick={() => setMode("photo")}
           disabled={step !== "upload"}
-          className={`p-4 rounded-2xl text-left transition-all border ${
+          className={`p-5 rounded-3xl text-left transition-all duration-200 border ${
             mode === "photo"
-              ? "bg-primary-light border-primary/30 shadow-sm"
-              : "bg-surface border-border hover:bg-surface-hover"
+              ? "bg-accent-light border-accent/20 shadow-card"
+              : "bg-surface border-border-subtle shadow-card hover:shadow-card-hover"
           }`}
         >
-          <div className="text-xl mb-1">🖼️</div>
-          <p className="text-sm font-semibold">Talk to a Photo</p>
-          <p className="text-xs text-muted mt-0.5">
+          <div className="text-2xl mb-2">🖼️</div>
+          <p className="text-sm font-medium tracking-apple">Talk to a Photo</p>
+          <p className="text-xs text-muted mt-1">
             Paintings, memories, places
           </p>
         </button>
         <button
           onClick={() => setMode("character")}
           disabled={step !== "upload"}
-          className={`p-4 rounded-2xl text-left transition-all border ${
+          className={`p-5 rounded-3xl text-left transition-all duration-200 border ${
             mode === "character"
-              ? "bg-primary-light border-primary/30 shadow-sm"
-              : "bg-surface border-border hover:bg-surface-hover"
+              ? "bg-accent-light border-accent/20 shadow-card"
+              : "bg-surface border-border-subtle shadow-card hover:shadow-card-hover"
           }`}
         >
-          <div className="text-xl mb-1">👀</div>
-          <p className="text-sm font-semibold">Create a Character</p>
-          <p className="text-xs text-muted mt-0.5">
+          <div className="text-2xl mb-2">👀</div>
+          <p className="text-sm font-medium tracking-apple">
+            Create a Character
+          </p>
+          <p className="text-xs text-muted mt-1">
             Googly eyes, funny voice
           </p>
         </button>
@@ -141,22 +140,19 @@ export default function Home() {
 
       {/* Upload */}
       {step === "upload" && (
-        <ImageUpload
-          onCapture={handleCapture}
-          disabled={false}
-        />
+        <ImageUpload onCapture={handleCapture} disabled={false} />
       )}
 
       {/* Processing / Saving */}
       {(step === "processing" || step === "saving") && (
-        <div className="flex flex-col items-center gap-4 py-12 fade-in">
+        <div className="flex flex-col items-center gap-4 py-16 fade-in">
           <div className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <p className="text-sm text-muted">{statusText}</p>
+          <p className="text-sm text-muted font-medium">{statusText}</p>
         </div>
       )}
 
       {error && (
-        <div className="px-4 py-3 rounded-2xl bg-red-50 border border-red-200 text-sm text-red-600 fade-in">
+        <div className="px-5 py-4 rounded-2xl bg-red-50/80 border border-red-100 text-sm text-red-600 fade-in">
           {error}
         </div>
       )}

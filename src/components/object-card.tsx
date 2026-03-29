@@ -23,7 +23,7 @@ export function ObjectCard({ object }: { object: NPCObject }) {
   return (
     <Link
       href={`/object/${object.id}`}
-      className={`group block rounded-2xl overflow-hidden bg-surface border border-border shadow-sm hover:shadow-md transition-all ${
+      className={`group block rounded-3xl overflow-hidden bg-surface shadow-card hover:shadow-card-hover transition-all duration-300 ${
         deleting ? "opacity-40 pointer-events-none" : ""
       }`}
     >
@@ -35,7 +35,7 @@ export function ObjectCard({ object }: { object: NPCObject }) {
         />
         <button
           onClick={handleDelete}
-          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/80 backdrop-blur-sm shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-500"
           aria-label="Delete"
         >
           <svg
@@ -52,14 +52,16 @@ export function ObjectCard({ object }: { object: NPCObject }) {
           </svg>
         </button>
         {object.mode === "character" && (
-          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-white/80 backdrop-blur-sm text-[10px] font-medium shadow-sm">
+          <span className="absolute bottom-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-sm text-[10px] font-medium shadow-sm">
             Character
           </span>
         )}
       </div>
-      <div className="px-3 py-2.5">
-        <h3 className="font-semibold text-sm truncate">{object.name}</h3>
-        <p className="text-xs text-muted mt-0.5 line-clamp-1">
+      <div className="px-4 py-3.5">
+        <h3 className="font-medium text-sm tracking-apple truncate">
+          {object.name}
+        </h3>
+        <p className="text-xs text-muted mt-1 line-clamp-1">
           {object.backstory}
         </p>
       </div>

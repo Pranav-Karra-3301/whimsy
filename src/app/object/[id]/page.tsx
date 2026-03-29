@@ -18,17 +18,17 @@ export default async function ObjectPage({
   }
 
   return (
-    <div className="pt-6 space-y-5 fade-in">
+    <div className="pt-8 space-y-6 fade-in">
       <Link
         href="/gallery"
-        className="inline-flex items-center gap-1 text-sm text-muted hover:text-[var(--text)] transition-colors"
+        className="group inline-flex items-center gap-1 text-sm text-muted font-medium hover:text-[var(--text)] transition-colors"
       >
         <svg
           width="16"
           height="16"
           viewBox="0 0 16 16"
           fill="none"
-          className="opacity-60"
+          className="opacity-60 group-hover:translate-x-[-2px] transition-transform"
         >
           <path
             d="M10 12L6 8L10 4"
@@ -41,7 +41,7 @@ export default async function ObjectPage({
         Gallery
       </Link>
 
-      <div className="rounded-3xl overflow-hidden bg-surface border border-border shadow-sm">
+      <div className="rounded-4xl overflow-hidden bg-surface shadow-card-hover">
         <div className="aspect-square overflow-hidden">
           <img
             src={object.image_url}
@@ -51,17 +51,21 @@ export default async function ObjectPage({
             }`}
           />
         </div>
-        <div className="px-5 py-4">
-          <h1 className="text-xl font-bold">{object.name}</h1>
-          <p className="text-sm text-muted mt-1">{object.backstory}</p>
-          <div className="flex items-center gap-3 mt-3 text-xs text-muted font-mono">
+        <div className="px-6 py-5">
+          <h1 className="text-2xl font-semibold tracking-apple">
+            {object.name}
+          </h1>
+          <p className="text-base text-muted mt-2 leading-relaxed">
+            {object.backstory}
+          </p>
+          <div className="flex items-center gap-3 mt-4 text-xs text-muted font-mono">
             <span>
               Talked {object.times_talked_to} time
               {object.times_talked_to !== 1 ? "s" : ""}
             </span>
             {object.voice_name && (
               <>
-                <span className="opacity-30">|</span>
+                <span className="opacity-20">|</span>
                 <span>Voice: {object.voice_name}</span>
               </>
             )}
