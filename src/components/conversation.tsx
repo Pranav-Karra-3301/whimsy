@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { CRTScreen } from "./crt-screen";
 
 interface ConversationProps {
   objectId: string;
@@ -22,7 +23,6 @@ export function Conversation({
   objectName,
   personality,
   voiceId,
-  imageUrl,
 }: ConversationProps) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
@@ -32,16 +32,6 @@ export function Conversation({
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = useCallback(() => {
-    setTimeout(() => {
-      scrollRef.current?.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    }, 50);
-  }, []);
 
   const startRecording = useCallback(async () => {
     setError("");
@@ -104,7 +94,6 @@ export function Conversation({
       if (data.response)
         newMessages.push({ role: "assistant", text: data.response });
       setMessages((prev) => [...prev, ...newMessages]);
-      scrollToBottom();
 
       if (data.audio) {
         setStatus("playing");
@@ -120,7 +109,7 @@ export function Conversation({
       setError("Failed to get response. Try again.");
       setStatus("idle");
     }
-  }, [messages, objectName, personality, voiceId, scrollToBottom]);
+  }, [messages, objectName, personality, voiceId]);
 
   const endConversation = useCallback(() => {
     audioRef.current?.pause();
@@ -142,6 +131,57 @@ export function Conversation({
     setError("");
   }, []);
 
+  // Build terminal text content for the CRT renderer
+  const terminalText = useMemo(() => {
+    const lines: string[] = [];
+    const tag = objectName.toUpperCase().slice(0, 10);
+
+    lines.push("");
+    lines.push(`  WHIMSY CRT-V1                              ${status === "ended" ? "SIGNAL LOST" : status === "recording" ? "REC *" : "STANDBY"}`);
+    lines.push("");
+    lines.push(`  ${tag}`);
+    lines.push("");
+
+    if (messages.length === 0 && status === "idle") {
+      lines.push("  Hold button to transmit...");
+    }
+
+    for (const msg of messages) {
+      if (msg.role === "assistant") {
+        // Word-wrap long messages
+        const prefix = `  ${tag}: `;
+        const wrapped = wordWrap(msg.text, 70 - prefix.length);
+        lines.push(prefix + wrapped[0]);
+        for (let i = 1; i < wrapped.length; i++) {
+          lines.push(" ".repeat(prefix.length) + wrapped[i]);
+        }
+      } else {
+        const prefix = "  YOU: ";
+        const wrapped = wordWrap(msg.text, 70 - prefix.length);
+        lines.push(prefix + wrapped[0]);
+        for (let i = 1; i < wrapped.length; i++) {
+          lines.push(" ".repeat(prefix.length) + wrapped[i]);
+        }
+      }
+      lines.push("");
+    }
+
+    if (status === "processing") {
+      lines.push(`  ${tag}: ...`);
+    }
+
+    if (error) {
+      lines.push(`  ERR: ${error}`);
+    }
+
+    if (status === "ended") {
+      lines.push("");
+      lines.push("  -- END TRANSMISSION --");
+    }
+
+    return lines.join("\n");
+  }, [messages, status, objectName, error]);
+
   if (!open) {
     return (
       <button
@@ -153,170 +193,49 @@ export function Conversation({
     );
   }
 
-  const statusLabel =
-    status === "recording"
-      ? "REC ●"
-      : status === "processing"
-        ? "PROCESSING..."
-        : status === "playing"
-          ? "PLAYING..."
-          : status === "ended"
-            ? "SIGNAL LOST"
-            : "STANDBY";
-
   return (
-    <div className="fixed inset-0 z-50 bg-[var(--crt-screen)] overflow-hidden crt-flicker">
-      {/* ── CRT effect layers ── */}
+    <div className="fixed inset-0 z-50 overflow-hidden">
+      {/* WebGL CRT canvas — fills entire screen */}
+      <CRTScreen text={terminalText} />
 
-      {/* Green phosphor wash over the dark screen */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(12,204,104,0.06),transparent_70%)] pointer-events-none" />
-
-      {/* Scanlines */}
-      <div className="crt-scanlines" />
-
-      {/* Scan beam */}
-      <div className="crt-scanbeam" />
-
-      {/* Vignette */}
-      <div className="crt-vignette" />
-
-      {/* Glass reflection */}
-      <div className="crt-reflection" />
-
-      {/* Bezel frame (radial gradient overlay) */}
-      <div className="crt-bezel" />
-
-      {/* ── Screen content ── */}
-      <div className="relative z-10 flex flex-col h-full">
-        {/* Top status bar */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3">
-          <div className="flex items-center gap-3">
-            {status === "ended" ? (
-              <button
-                onClick={close}
-                className="font-mono text-xs crt-text hover:brightness-125 transition-all"
-              >
-                [EXIT]
-              </button>
-            ) : (
-              <button
-                onClick={endConversation}
-                className="font-mono text-xs crt-text-dim hover:text-[var(--crt-green)] transition-colors"
-              >
-                [END]
-              </button>
-            )}
-          </div>
-
-          <span
-            className={`font-mono text-[11px] tracking-wider ${
-              status === "recording"
-                ? "text-red-400 animate-pulse"
-                : "crt-text-dim"
-            }`}
-          >
-            {statusLabel}
-          </span>
-
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[9px] crt-text-dim tracking-wider hidden sm:inline">
-              WHIMSY
-            </span>
-            <div className={status === "ended" ? "crt-led-off" : "crt-led"} />
-          </div>
-        </div>
-
-        {/* Character display */}
-        <div className="flex-shrink-0 flex flex-col items-center py-4 sm:py-6 px-4">
-          {imageUrl ? (
-            <div className="relative">
-              <div className="absolute -inset-4 rounded-2xl bg-[var(--crt-green)]/[0.04] blur-2xl" />
-              <img
-                src={imageUrl}
-                alt={objectName}
-                className={`relative w-28 h-28 sm:w-36 sm:h-36 rounded-xl object-cover crt-image crt-rgb-shift ${
-                  status === "playing" ? "wobble-eyes" : ""
-                }`}
-              />
-            </div>
-          ) : (
-            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl bg-[var(--crt-green)]/[0.03] flex items-center justify-center">
-              <span className="crt-text font-mono text-3xl">?</span>
-            </div>
-          )}
-          <p className="crt-text font-mono text-sm sm:text-base mt-3 tracking-wide">
-            {objectName}
-          </p>
-          {messages.length === 0 && status === "idle" && (
-            <p className="crt-text-dim font-mono text-[10px] mt-1.5 tracking-wider">
-              HOLD BUTTON TO TRANSMIT
-            </p>
-          )}
-        </div>
-
-        {/* Messages */}
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto px-4 sm:px-6 py-2 space-y-2.5 min-h-0"
-        >
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className="font-mono text-[13px] sm:text-sm leading-[1.55]"
+      {/* Interactive overlay — buttons on top of the CRT */}
+      <div className="absolute inset-0 z-10 flex flex-col pointer-events-none">
+        {/* Top controls */}
+        <div className="flex items-center justify-between px-8 sm:px-12 pt-8 sm:pt-10">
+          {status === "ended" ? (
+            <button
+              onClick={close}
+              className="pointer-events-auto font-mono text-xs text-[#0ccc68] opacity-0 hover:opacity-100 transition-opacity cursor-pointer px-3 py-1.5"
             >
-              {msg.role === "assistant" ? (
-                <div className="crt-text">
-                  <span className="crt-text-dim text-[11px]">
-                    {objectName.toUpperCase().slice(0, 8)}:{" "}
-                  </span>
-                  {msg.text}
-                </div>
-              ) : (
-                <div className="crt-text-amber">
-                  <span className="opacity-60 text-[11px]">YOU: </span>
-                  {msg.text}
-                </div>
-              )}
-            </div>
-          ))}
-          {status === "processing" && (
-            <div className="flex items-center gap-[5px] font-mono crt-text">
-              <span className="crt-text-dim text-[11px]">
-                {objectName.toUpperCase().slice(0, 8)}:{" "}
-              </span>
-              <span className="inline-flex gap-[4px]">
-                <span className="w-[5px] h-[5px] rounded-full bg-[var(--crt-green)] animate-bounce-dot" />
-                <span
-                  className="w-[5px] h-[5px] rounded-full bg-[var(--crt-green)] animate-bounce-dot"
-                  style={{ animationDelay: "0.16s" }}
-                />
-                <span
-                  className="w-[5px] h-[5px] rounded-full bg-[var(--crt-green)] animate-bounce-dot"
-                  style={{ animationDelay: "0.32s" }}
-                />
-              </span>
-            </div>
+              [EXIT]
+            </button>
+          ) : (
+            <button
+              onClick={endConversation}
+              className="pointer-events-auto font-mono text-xs text-[#0a7a3e] hover:text-[#0ccc68] transition-colors cursor-pointer px-3 py-1.5"
+            >
+              [END]
+            </button>
           )}
+          <div />
         </div>
 
-        {/* Push-to-talk */}
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Bottom controls */}
         {status !== "ended" && (
-          <div className="flex-shrink-0 px-4 sm:px-6 pt-3 pb-4 flex flex-col items-center gap-2">
-            {error && (
-              <p className="font-mono text-[11px] text-red-400 text-center">
-                ERR: {error}
-              </p>
-            )}
+          <div className="flex flex-col items-center gap-3 pb-10 sm:pb-14">
             <button
               onTouchStart={startRecording}
               onTouchEnd={stopRecording}
               onMouseDown={startRecording}
               onMouseUp={stopRecording}
               disabled={status === "processing" || status === "playing"}
-              className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-20 border-2 ${
+              className={`pointer-events-auto w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-20 border-2 ${
                 status === "recording"
                   ? "border-red-400 bg-red-400/10 text-red-400 scale-110 shadow-[0_0_24px_rgba(248,113,113,0.25)]"
-                  : "border-[var(--crt-green)]/40 bg-[var(--crt-green)]/5 crt-text hover:bg-[var(--crt-green)]/10 active:scale-110 active:border-red-400 active:text-red-400"
+                  : "border-[#0ccc68]/40 bg-[#0ccc68]/5 text-[#0ccc68] hover:bg-[#0ccc68]/10 active:scale-110 active:border-red-400 active:text-red-400"
               }`}
             >
               <svg
@@ -334,21 +253,41 @@ export function Conversation({
                 <line x1="12" y1="19" x2="12" y2="22" />
               </svg>
             </button>
-            <p className="font-mono text-[10px] crt-text-dim tracking-wider">
+            <p className="font-mono text-[10px] text-[#0a7a3e] tracking-wider">
               {status === "recording" ? "RELEASE TO SEND" : "HOLD TO TALK"}
             </p>
           </div>
         )}
 
-        {/* Ended state */}
         {status === "ended" && (
-          <div className="flex-shrink-0 px-4 pt-5 pb-4 flex flex-col items-center">
-            <p className="font-mono text-[11px] crt-text-dim tracking-[0.3em]">
-              — END TRANSMISSION —
-            </p>
+          <div className="flex flex-col items-center pb-12">
+            <button
+              onClick={close}
+              className="pointer-events-auto font-mono text-sm text-[#0ccc68] px-6 py-2 border border-[#0ccc68]/30 rounded hover:bg-[#0ccc68]/10 transition-colors cursor-pointer"
+            >
+              Done
+            </button>
           </div>
         )}
       </div>
     </div>
   );
+}
+
+/** Simple word-wrap utility */
+function wordWrap(text: string, maxWidth: number): string[] {
+  if (text.length <= maxWidth) return [text];
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    if (current.length + word.length + 1 > maxWidth && current.length > 0) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = current ? current + " " + word : word;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
 }
