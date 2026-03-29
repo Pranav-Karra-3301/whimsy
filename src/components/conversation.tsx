@@ -165,29 +165,26 @@ export function Conversation({
             : "STANDBY";
 
   return (
-    <div className="fixed inset-0 z-50 bg-[var(--crt-bg)] overflow-hidden crt-flicker">
+    <div className="fixed inset-0 z-50 bg-[var(--crt-screen)] overflow-hidden crt-flicker">
       {/* ── CRT effect layers ── */}
 
-      {/* Blurred photo ambient glow */}
-      {imageUrl && (
-        <img
-          src={imageUrl}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover scale-125 blur-[80px] opacity-[0.07] pointer-events-none"
-        />
-      )}
+      {/* Green phosphor wash over the dark screen */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(12,204,104,0.06),transparent_70%)] pointer-events-none" />
 
       {/* Scanlines */}
-      <div className="crt-scanlines pointer-events-none" />
+      <div className="crt-scanlines" />
 
       {/* Scan beam */}
       <div className="crt-scanbeam" />
 
-      {/* Vignette + frame shadow (matches TerminalFrame shader) */}
-      <div className="crt-frame pointer-events-none" />
+      {/* Vignette */}
+      <div className="crt-vignette" />
 
       {/* Glass reflection */}
       <div className="crt-reflection" />
+
+      {/* 3D Bezel frame */}
+      <div className="crt-bezel" />
 
       {/* ── Screen content ── */}
       <div className="relative z-10 flex flex-col h-full">
