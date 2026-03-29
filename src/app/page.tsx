@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ImageUpload } from "@/components/camera-capture";
+import Link from "next/link";
 import type { IdentifyResponse } from "@/types";
 
 type Mode = "photo" | "character";
@@ -92,49 +93,68 @@ export default function Home() {
   );
 
   return (
-    <div className="pt-12 space-y-8">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-apple">
-          Talk to a picture
-        </h1>
-        <p className="text-base text-muted mt-2">
-          Upload any photo, painting, or memory and start a conversation.
+    <div className="max-w-xl mx-auto px-5 pt-16 pb-32 fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-12">
+        <h1 className="font-display text-4xl text-[var(--text)]">whimsy</h1>
+        <Link
+          href="/gallery"
+          className="text-sm text-muted hover:text-[var(--text)] transition-colors"
+        >
+          Gallery
+        </Link>
+      </div>
+
+      {/* Intro */}
+      <div className="mb-10">
+        <h2 className="font-display text-3xl leading-snug mb-3">
+          Every picture
+          <br />
+          has a story to tell
+        </h2>
+        <p className="text-base text-muted leading-relaxed max-w-sm">
+          Upload a photo, painting, or memory — and start a conversation with
+          it.
         </p>
       </div>
 
       {/* Mode selector */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3 mb-8">
         <button
           onClick={() => setMode("photo")}
           disabled={step !== "upload"}
-          className={`p-5 rounded-3xl text-left transition-all duration-200 border ${
+          className={`relative p-5 rounded-2xl text-left transition-all duration-300 border ${
             mode === "photo"
-              ? "bg-accent-light border-accent/20 shadow-card"
-              : "bg-surface border-border-subtle shadow-card hover:shadow-card-hover"
+              ? "bg-surface border-accent/25 shadow-card-hover"
+              : "bg-surface/60 border-border-subtle hover:bg-surface hover:shadow-card"
           }`}
         >
-          <div className="text-2xl mb-2">🖼️</div>
-          <p className="text-sm font-medium tracking-apple">Talk to a Photo</p>
-          <p className="text-xs text-muted mt-1">
-            Paintings, memories, places
+          <div className="text-2xl mb-3">🖼️</div>
+          <p className="text-sm font-medium tracking-apple">Photo</p>
+          <p className="text-xs text-muted mt-1 leading-relaxed">
+            Talk to paintings, memories, places
           </p>
+          {mode === "photo" && (
+            <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-accent" />
+          )}
         </button>
         <button
           onClick={() => setMode("character")}
           disabled={step !== "upload"}
-          className={`p-5 rounded-3xl text-left transition-all duration-200 border ${
+          className={`relative p-5 rounded-2xl text-left transition-all duration-300 border ${
             mode === "character"
-              ? "bg-accent-light border-accent/20 shadow-card"
-              : "bg-surface border-border-subtle shadow-card hover:shadow-card-hover"
+              ? "bg-surface border-accent/25 shadow-card-hover"
+              : "bg-surface/60 border-border-subtle hover:bg-surface hover:shadow-card"
           }`}
         >
-          <div className="text-2xl mb-2">👀</div>
-          <p className="text-sm font-medium tracking-apple">
-            Create a Character
-          </p>
-          <p className="text-xs text-muted mt-1">
+          <div className="text-2xl mb-3">👀</div>
+          <p className="text-sm font-medium tracking-apple">Character</p>
+          <p className="text-xs text-muted mt-1 leading-relaxed">
             Googly eyes, funny voice
           </p>
+          {mode === "character" && (
+            <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-accent" />
+          )}
         </button>
       </div>
 
@@ -145,14 +165,16 @@ export default function Home() {
 
       {/* Processing / Saving */}
       {(step === "processing" || step === "saving") && (
-        <div className="flex flex-col items-center gap-4 py-16 fade-in">
-          <div className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <p className="text-sm text-muted font-medium">{statusText}</p>
+        <div className="flex flex-col items-center gap-5 py-20 fade-in">
+          <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+          <p className="text-sm text-muted font-display text-lg">
+            {statusText}
+          </p>
         </div>
       )}
 
       {error && (
-        <div className="px-5 py-4 rounded-2xl bg-red-50/80 border border-red-100 text-sm text-red-600 fade-in">
+        <div className="px-5 py-4 rounded-2xl bg-red-50/60 border border-red-100/60 text-sm text-red-600 fade-in mt-4">
           {error}
         </div>
       )}

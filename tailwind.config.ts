@@ -11,6 +11,7 @@ const config: Config = {
       fontFamily: {
         mono: ["var(--font-geist-mono)", "monospace"],
         sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
+        display: ["var(--font-serif)", "Georgia", "serif"],
       },
       colors: {
         bg: "var(--bg)",
@@ -26,12 +27,14 @@ const config: Config = {
         "text-secondary": "var(--text-secondary)",
       },
       boxShadow: {
-        card: "0 1px 2px rgba(0, 0, 0, 0.04)",
-        "card-hover": "0 2px 8px rgba(0, 0, 0, 0.06)",
-        elevated: "0 4px 16px rgba(0, 0, 0, 0.08)",
+        card: "0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02)",
+        "card-hover":
+          "0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04)",
+        elevated: "0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)",
+        soft: "0 2px 16px rgba(0, 0, 0, 0.05)",
       },
       borderRadius: {
-        "4xl": "24px",
+        "4xl": "28px",
       },
       letterSpacing: {
         apple: "-0.02em",

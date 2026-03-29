@@ -3,18 +3,18 @@
 @tailwind utilities;
 
 :root {
-  --bg: #F8F8F7;
+  --bg: #FAF9F7;
   --surface: #FFFFFF;
-  --surface-hover: #F3F3F2;
-  --border: #EBEBEB;
-  --border-subtle: #F0F0F0;
-  --muted: #86868B;
-  --primary: #1D1D1F;
-  --primary-hover: #2D2D2F;
-  --accent: #D4775C;
-  --accent-light: #FDF4F1;
-  --text: #1D1D1F;
-  --text-secondary: #6E6E73;
+  --surface-hover: #F5F4F2;
+  --border: #E8E6E3;
+  --border-subtle: #F0EFED;
+  --muted: #8A8784;
+  --primary: #1A1917;
+  --primary-hover: #2C2B28;
+  --accent: #C4704A;
+  --accent-light: #FBF3EF;
+  --text: #1A1917;
+  --text-secondary: #6B6966;
 }
 
 body {
@@ -29,10 +29,15 @@ body {
   color: white;
 }
 
-*:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 4px;
+/* Serif display font utility */
+.font-display {
+  font-family: var(--font-serif), Georgia, serif;
+  font-style: italic;
+}
+
+/* Smooth image loading */
+img {
+  transition: opacity 0.4s ease;
 }
 
 @keyframes wobble {
@@ -54,19 +59,71 @@ body {
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .fade-in {
-  animation: fade-in 0.4s ease-out;
+  animation: fade-in 0.5s ease-out;
 }
 
 @keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .fade-in-up {
-  animation: fade-in-up 0.5s ease-out both;
+  animation: fade-in-up 0.6s ease-out both;
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.scale-in {
+  animation: scale-in 0.5s ease-out;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Gradient overlay for memory images */
+.memory-gradient {
+  background: linear-gradient(
+    to top,
+    rgba(26, 25, 23, 0.85) 0%,
+    rgba(26, 25, 23, 0.5) 30%,
+    rgba(26, 25, 23, 0.1) 60%,
+    transparent 100%
+  );
+}
+
+/* Soft vignette effect */
+.vignette {
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.15);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }

@@ -34,16 +34,16 @@ export function ImageUpload({ onCapture, disabled }: ImageUploadProps) {
 
   if (preview) {
     return (
-      <div className="relative fade-in">
+      <div className="relative scale-in">
         <img
           src={preview}
           alt="Selected photo"
-          className="w-full aspect-[4/3] object-cover rounded-3xl"
+          className="w-full aspect-[4/5] object-cover rounded-2xl shadow-card-hover"
         />
         {!disabled && (
           <button
             onClick={reset}
-            className="absolute top-3 right-3 px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-md text-sm font-medium shadow-sm hover:bg-white transition-colors"
+            className="absolute top-3 right-3 px-4 py-1.5 rounded-full bg-black/30 backdrop-blur-md text-sm font-medium text-white/90 hover:bg-black/50 transition-all"
           >
             Change
           </button>
@@ -54,9 +54,16 @@ export function ImageUpload({ onCapture, disabled }: ImageUploadProps) {
 
   return (
     <div className="space-y-3 fade-in">
-      <label className="block w-full py-16 rounded-3xl bg-surface border border-border-subtle shadow-card hover:shadow-card-hover hover:bg-surface-hover transition-all duration-200 text-center cursor-pointer">
-        <div className="text-4xl mb-3">📷</div>
-        <span className="text-sm text-muted font-medium">Take a photo</span>
+      <label className="group block w-full py-20 rounded-2xl bg-surface border border-dashed border-border hover:border-accent/30 hover:shadow-card transition-all duration-300 text-center cursor-pointer">
+        <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
+          📷
+        </div>
+        <span className="text-sm text-muted font-medium">
+          Take a photo
+        </span>
+        <span className="block text-xs text-muted/60 mt-1">
+          or tap to choose from your library
+        </span>
         <input
           type="file"
           accept="image/*"
@@ -66,8 +73,8 @@ export function ImageUpload({ onCapture, disabled }: ImageUploadProps) {
           disabled={disabled}
         />
       </label>
-      <label className="block w-full py-5 rounded-2xl bg-surface border border-dashed border-border shadow-card hover:bg-surface-hover transition-all duration-200 text-center cursor-pointer text-sm text-muted font-medium">
-        Upload from gallery
+      <label className="block w-full py-4 rounded-xl bg-surface-hover/50 hover:bg-surface-hover transition-colors duration-200 text-center cursor-pointer text-sm text-muted font-medium">
+        Upload from files
         <input
           type="file"
           accept="image/*"
